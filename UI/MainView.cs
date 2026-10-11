@@ -81,7 +81,7 @@ public class MainView : Window
     private static readonly string[] _audioExts = [".mp3", ".flac", ".wav", ".ogg", ".aac", ".wma", ".m4a", ".ape", ".mid", ".midi", ".mp4", ".mkv", ".avi", ".webm"];
 
     private static readonly float[] Speeds = [0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f];
-    private static readonly string[] Modes = ["Sequential", "Single Loop", "Random"];
+    private static readonly string[] Modes = ["顺序", "单曲", "随机"];
 
     public MainView()
     {
@@ -159,15 +159,15 @@ public class MainView : Window
 
         // === Top info ===
         _lblTitle = new Label {
-            Text = "Whisper - Press Ctrl+O to open files",
-            X = 0, Y = 0, Width = Dim.Fill(26), Height = 1
+            Text = "Whisper - Ctrl+O 打开文件",
+            X = 0, Y = 0, Width = Dim.Fill(36), Height = 1
         };
         _lblTitle.SetScheme(cNormal);
         var btnDevReload = new Button { NoPadding = true,
-            Text = "Refresh", X = Pos.AnchorEnd(30), Y = 0, Width = 8, Height = 1
+            Text = "刷新", X = Pos.AnchorEnd(40), Y = 0, Width = 6, Height = 1
         };
         _btnDevice = new Button { NoPadding = true,
-            Text = "Dev: -", X = Pos.Right(btnDevReload) + 1, Y = 0, Width = 28, Height = 1
+            Text = "设备: -", X = Pos.Right(btnDevReload) + 1, Y = 0, Width = 30, Height = 1
         };
         _btnDevice.Accepting += (_, _) => CycleDevice();
         PopulateDevices();
@@ -190,7 +190,7 @@ public class MainView : Window
 
         // === Metadata GroupBox (left, fixed size) ===
         _metaView = new FrameView {
-            Title = "Metadata", X = 0, Y = MetaY, Width = MetaWidth, Height = MetaHeight,
+            Title = "元数据", X = 0, Y = MetaY, Width = MetaWidth, Height = MetaHeight,
             BorderStyle = LineStyle.Single
         };
         _metaView.SetScheme(cWindow);
@@ -206,7 +206,7 @@ public class MainView : Window
         var metaOverflows = MetaY + MetaHeight > PlaylistY;
         var playlistW = metaOverflows ? Dim.Fill(MetaWidth) : Dim.Percent(65);
 
-        _spectrumView = new FrameView { Title = "Spectrum", X = 0, Y = PlaylistY, Width = Dim.Percent(35), Height = Dim.Fill(3), BorderStyle = LineStyle.Single };
+        _spectrumView = new FrameView { Title = "频谱", X = 0, Y = PlaylistY, Width = Dim.Percent(35), Height = Dim.Fill(3), BorderStyle = LineStyle.Single };
         _spectrumView.SetScheme(cWindow);
         var specLbls = new[] { "Ovl", "Sub", "L1 ", "L2 ", "L3 ", "L4 ", "M1 ", "M2 ", "M3 ", "M4 ", "H1 ", "H2 ", "H3 ", "H4 ", "Hi1", "Hi2", "Hi3" };
         var specCyan = new Scheme { Normal = new Attribute(Color.BrightCyan, Color.Black) };
@@ -221,7 +221,7 @@ public class MainView : Window
         }
 
         // Playlist (65%, right)
-        var lstLabel = new Label { Text = "Playlist:", X = Pos.Right(_spectrumView), Y = PlaylistY, Width = playlistW, Height = 1 };
+        var lstLabel = new Label { Text = "播放列表:", X = Pos.Right(_spectrumView), Y = PlaylistY, Width = playlistW, Height = 1 };
         lstLabel.SetScheme(cNormal);
         _lstFiles = new ListView { X = Pos.Right(_spectrumView), Y = PlaylistY + 1, Width = playlistW, Height = Dim.Fill(3) };
         _lstFiles.SetScheme(cList);
@@ -236,19 +236,19 @@ public class MainView : Window
         var btnPrev = new Button { NoPadding = true, Text = "_<", X = 0, Y = btnY, Width = 7, Height = 1 }; btnPrev.Accepting += (_, _) => Prev();
         var btnNext = new Button { NoPadding = true, Text = "_>", X = Pos.Right(btnPrev) + 1, Y = btnY, Width = 7, Height = 1 }; btnNext.Accepting += (_, _) => Next();
 
-        _btnPlayPause = new Button { NoPadding = true, Text = "_Play", X = Pos.Right(btnNext) + 1, Y = btnY, Width = 10, Height = 1 }; _btnPlayPause.Accepting += (_, _) => TogglePlayPause();
-        var btnStop = new Button { NoPadding = true, Text = "_Stop", X = Pos.Right(_btnPlayPause) + 1, Y = btnY, Width = 9, Height = 1 }; btnStop.Accepting += (_, _) => { if (_midiPath != null) _midi.Stop(); else _player.Stop(); if (_isVideo) { _videoMv.Close(); for (int i = 0; i < 11; i++) _lrcLabels[i].Text = ""; } };
-        var btnOpen = new Button { NoPadding = true, Text = "_Open", X = Pos.Right(btnStop) + 1, Y = btnY, Width = 9, Height = 1 }; btnOpen.Accepting += (_, _) => OpenFiles();
-        var btnDir = new Button { NoPadding = true, Text = "_Load", X = Pos.Right(btnOpen) + 1, Y = btnY, Width = 9, Height = 1 }; btnDir.Accepting += (_, _) => LoadFolder();
-        var btnDel = new Button { NoPadding = true, Text = "_Del", X = Pos.Right(btnDir) + 1, Y = btnY, Width = 8, Height = 1 }; btnDel.Accepting += (_, _) => DeleteSelected();
-        var btnAbort = new Button { NoPadding = true, Text = "Abo_rt", X = Pos.Right(btnDel) + 1, Y = btnY, Width = 9, Height = 1 };
+        _btnPlayPause = new Button { NoPadding = true, Text = "_播放", X = Pos.Right(btnNext) + 1, Y = btnY, Width = 10, Height = 1 }; _btnPlayPause.Accepting += (_, _) => TogglePlayPause();
+        var btnStop = new Button { NoPadding = true, Text = "_停止", X = Pos.Right(_btnPlayPause) + 1, Y = btnY, Width = 10, Height = 1 }; btnStop.Accepting += (_, _) => { if (_midiPath != null) _midi.Stop(); else _player.Stop(); if (_isVideo) { _videoMv.Close(); for (int i = 0; i < 11; i++) _lrcLabels[i].Text = ""; } };
+        var btnOpen = new Button { NoPadding = true, Text = "_打开", X = Pos.Right(btnStop) + 1, Y = btnY, Width = 10, Height = 1 }; btnOpen.Accepting += (_, _) => OpenFiles();
+        var btnDir = new Button { NoPadding = true, Text = "_载入", X = Pos.Right(btnOpen) + 1, Y = btnY, Width = 10, Height = 1 }; btnDir.Accepting += (_, _) => LoadFolder();
+        var btnDel = new Button { NoPadding = true, Text = "_删除", X = Pos.Right(btnDir) + 1, Y = btnY, Width = 10, Height = 1 }; btnDel.Accepting += (_, _) => DeleteSelected();
+        var btnAbort = new Button { NoPadding = true, Text = "中_止", X = Pos.Right(btnDel) + 1, Y = btnY, Width = 10, Height = 1 };
         btnAbort.Accepting += (_, _) => AbortScript();
-        var btnSort = new Button { NoPadding = true, Text = "_Sort", X = Pos.Right(btnAbort) + 1, Y = btnY, Width = 9, Height = 1 };
+        var btnSort = new Button { NoPadding = true, Text = "_排序", X = Pos.Right(btnAbort) + 1, Y = btnY, Width = 10, Height = 1 };
         btnSort.Accepting += (_, _) => SortPlaylist();
-        var btnClrAll = new Button { NoPadding = true, Text = "Cl_rAll", X = Pos.Right(btnSort) + 1, Y = btnY, Width = 9, Height = 1 }; btnClrAll.Accepting += (_, _) => ClearAll();
+        var btnClrAll = new Button { NoPadding = true, Text = "清_空", X = Pos.Right(btnSort) + 1, Y = btnY, Width = 10, Height = 1 }; btnClrAll.Accepting += (_, _) => ClearAll();
 
         // Volume row
-        var lblVol = new Label { Text = "Vol:", X = 0, Y = volY, Width = 5, Height = 1 };
+        var lblVol = new Label { Text = "音量:", X = 0, Y = volY, Width = 5, Height = 1 };
         _volBar = new ProgressBar { X = Pos.Right(lblVol) + 1, Y = volY, Width = 20, Height = 1, Fraction = 0.8f };
         _player.Volume = 0.8f;
 
@@ -256,14 +256,14 @@ public class MainView : Window
         _btnSpeed.Accepting += (_, _) => { _speedIdx = (_speedIdx + 1) % Speeds.Length; _btnSpeed.Text = $"{Speeds[_speedIdx]:F2}x"; _player.Speed = Speeds[_speedIdx]; _player.ApplySpeed(); };
         _btnMode = new Button { NoPadding = true, Text = Modes[0], X = Pos.Right(_btnSpeed) + 1, Y = volY, Width = 12, Height = 1 };
         _btnMode.Accepting += (_, _) => { _modeIdx = (_modeIdx + 1) % Modes.Length; _btnMode.Text = Modes[_modeIdx]; _player.Mode = (PlayMode)_modeIdx; };
-        var _btnEQ = new Button { NoPadding = true, Text = "_EQ", X = Pos.Right(_btnMode) + 1, Y = volY, Width = 6, Height = 1 };
+        var _btnEQ = new Button { NoPadding = true, Text = "_均衡", X = Pos.Right(_btnMode) + 1, Y = volY, Width = 8, Height = 1 };
         _btnEQ.Accepting += (_, _) => EqWindow.Show(_player);
-        _btn8Bit = new Button { NoPadding = true, Text = "8_Bit", X = Pos.Right(_btnEQ) + 1, Y = volY, Width = 8, Height = 1 };
+        _btn8Bit = new Button { NoPadding = true, Text = "8_位", X = Pos.Right(_btnEQ) + 1, Y = volY, Width = 8, Height = 1 };
         _btn8BitDefault = _btn8Bit.GetScheme();
         _btn8Bit.Accepting += (_, _) => Toggle8Bit();
         var btnLoopA = new Button { NoPadding = true, Text = "_A", X = Pos.Right(_btn8Bit) + 1, Y = volY, Width = 6, Height = 1 }; btnLoopA.Accepting += (_, _) => { _player.LoopA = _player.Position; UpdateLoopLabel(); };
         var btnLoopB = new Button { NoPadding = true, Text = "_B", X = Pos.Right(btnLoopA) + 1, Y = volY, Width = 6, Height = 1 }; btnLoopB.Accepting += (_, _) => { _player.LoopB = _player.Position; UpdateLoopLabel(); };
-        var btnClear = new Button { NoPadding = true, Text = "_Clear", X = Pos.Right(btnLoopB) + 1, Y = volY, Width = 9, Height = 1 }; btnClear.Accepting += (_, _) => { _player.LoopA = null; _player.LoopB = null; UpdateLoopLabel(); };
+        var btnClear = new Button { NoPadding = true, Text = "_清除", X = Pos.Right(btnLoopB) + 1, Y = volY, Width = 10, Height = 1 }; btnClear.Accepting += (_, _) => { _player.LoopA = null; _player.LoopB = null; UpdateLoopLabel(); };
 
         _lblLoop = new Label { X = Pos.Right(btnClear) + 2, Y = volY, Width = Dim.Fill(), Height = 1 };
 
@@ -319,13 +319,14 @@ public class MainView : Window
         _cmdEngine.Register("q",     _ => Application.RequestStop(), "退出");
         _cmdEngine.Register("quit",  _ => Application.RequestStop(), "退出");
         _cmdEngine.Register("thanks", _ => {
-            MessageBox.Query(Application.Instance, 52, 10, "Thanks",
-                "Whisper uses the following open source projects:\n\n" +
+            MessageBox.Query(Application.Instance, 52, 10, "鸣谢",
+                "Whisper 使用了以下开源项目：\n\n" +
                 "BASS Audio Library\n" +
                 "https://www.un4seen.com/\n\n" +
                 "FFmpeg (LGPL)\n" +
                 "https://ffmpeg.org/\n\n" +
-                "Thank you!", "OK");
+                "感谢！",
+                "确定");
         }, "鸣谢开源项目");
         _cmdEngine.Register("reload",_ => { SavePlaylist(); LoadPlaylist(); }, "重载播放列表");
         _cmdEngine.Register("clear", _ => ClearAll(), "清空播放列表");
@@ -366,7 +367,7 @@ public class MainView : Window
         _cmdEngine.Register("sort", _ => SortPlaylist(), "按文件名排序播放列表");
         _cmdEngine.Register("help", _ => {
             MessageBox.Query(Application.Instance, 55, 16, "Commands",
-                _cmdEngine.GetHelpText(), "OK");
+                _cmdEngine.GetHelpText(), "确定");
         }, "列出所有命令");
         _cmdEngine.Register("exec", arg => {
             if (string.IsNullOrWhiteSpace(arg) || arg.Equals("help", StringComparison.OrdinalIgnoreCase))
@@ -377,14 +378,14 @@ public class MainView : Window
                     "Each line is one command (same as :cmd mode).\n\n" +
                     "Available commands:\n" +
                     _cmdEngine.GetHelpText() + "\n\n" +
-                    "Lines starting with # are comments.", "OK");
+                    "以 # 开头的行是注释。", "确定");
                 return;
             }
             var path = arg.Trim().Trim('"').Trim('\'');
             while (path.Contains(@"\\")) path = path.Replace(@"\\", @"\");
             if (!File.Exists(path))
             {
-                MessageBox.Query(Application.Instance, 50, 6, "exec", $"File not found:\n{path}", "OK");
+                MessageBox.Query(Application.Instance, 50, 6, "exec", $"文件不存在：\n{path}", "确定");
                 return;
             }
             try
@@ -399,27 +400,27 @@ public class MainView : Window
             }
             catch (Exception ex)
             {
-                MessageBox.Query(Application.Instance, 60, 8, "exec", $"Error reading script:\n{ex.Message}", "OK");
+                MessageBox.Query(Application.Instance, 60, 8, "exec", $"读取脚本出错：\n{ex.Message}", "确定");
             }
         }, "执行脚本 (.whisp)");
         _cmdEngine.Register("info", _ => {
             var info =
-                "Whisper - Terminal Audio Player\n" +
+                "Whisper - 终端音频播放器\n" +
                 "────────────────────────────────\n" +
                 "BASS + WaveOutSynth 双引擎\n" +
-                "10-band Parametric EQ\n" +
-                "Spectrum Analyzer, LRC Lyrics\n" +
-                "MIDI, 8-Bit, DSP Speed Control\n" +
-                "Script engine (.whisp)\n" +
-                "Terminal.Gui TUI framework\n" +
+                "10 段参数均衡器\n" +
+                "频谱分析、LRC 歌词\n" +
+                "MIDI、8-Bit、DSP 变速\n" +
+                "脚本引擎 (.whisp)\n" +
+                "Terminal.Gui TUI 框架\n" +
                 "────────────────────────────────\n" +
-                "by LargeHardTech\n" +
+                "作者 LargeHardTech\n" +
                 "github.com/LargeHardTech/Whisper";
-            MessageBox.Query(Application.Instance, 42, info.Split('\n').Length + 2, "About Whisper", info, "OK");
+            MessageBox.Query(Application.Instance, 42, info.Split('\n').Length + 2, "关于 Whisper", info, "确定");
         }, "关于Whisper");
         _cmdEngine.Register("wait", arg => {
             // 脚本专用命令，控制台输入报错
-            if (!_scriptRunning) { MessageBox.Query(Application.Instance, 40, 4, "wait", "wait is script-only. Use inside a .whisp file.", "OK"); return; }
+            if (!_scriptRunning) { MessageBox.Query(Application.Instance, 40, 4, "wait", "wait 仅限脚本内使用，请写在 .whisp 文件中。", "确定"); return; }
             if (string.IsNullOrWhiteSpace(arg)) return;
             var parts = arg.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0) return;
@@ -504,10 +505,10 @@ public class MainView : Window
         _scriptWaitUntil = DateTime.MinValue;
         _scriptWaitDone = false;
         UpdateCmdPrompt();
-        MessageBox.Query(Application.Instance, 40, 5, "Script", "Script aborted.", "OK");
+        MessageBox.Query(Application.Instance, 40, 5, "脚本", "脚本已中止。", "确定");
     }
 
-    private const string HelpText = "Space:Play  ,/.:Prev/Next  Up/Dn:Vol  <-/->:Seek  Del:Remove  Ctrl+O:Open  A/B:Loop  C:Clr  Q:Quit  :Cmd";
+    private const string HelpText = "空格:播放  ,/.:上/下一首  ↑↓:音量  ←→:快进退  Del:删除  Ctrl+O:打开  A/B:循环  C:清除  Q:退出  :命令";
 
     private void UpdateCmdPrompt()
     {
@@ -515,7 +516,7 @@ public class MainView : Window
         {
             _lblHelp.Visible = _inCmdMode;
             _lblCmdPrompt.Visible = true;
-            _lblCmdPrompt.Text = _inCmdMode ? ">>>" : "Exec";
+            _lblCmdPrompt.Text = _inCmdMode ? ">>>" : "脚本";
             _lblCmdInput.Visible = true;
             _lblCmdInput.Text = _inCmdMode ? _cmdBuffer.ToString() : $"{_scriptName} : {_scriptCurrentLine}";
             return;
@@ -537,7 +538,7 @@ public class MainView : Window
         {
             _lblCmdPrompt.SetScheme(_schemeCmdError);
             _lblCmdInput.SetScheme(_schemeCmdError);
-            _lblCmdInput.Text = $"Unknown command: {input}";
+            _lblCmdInput.Text = $"未知命令: {input}";
             _inCmdMode = false;
             _lblHelp.Visible = false;
             _lblCmdPrompt.Visible = true;
@@ -718,7 +719,7 @@ public class MainView : Window
         if (!Directory.Exists(lastDir))
             lastDir = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
         if (Directory.Exists(lastDir)) Environment.CurrentDirectory = lastDir;
-        var dlg = new OpenDialog { Title = "Open Music", AllowsMultipleSelection = true, MustExist = true };
+        var dlg = new OpenDialog { Title = "打开音乐", AllowsMultipleSelection = true, MustExist = true };
         _dialogOpen = true;
         Application.Run(dlg); _dialogOpen = false; if (dlg.Canceled) return;
         var firstPath = dlg.FilePaths.FirstOrDefault(); if (firstPath != null) SaveLastDir(Path.GetDirectoryName(firstPath) ?? lastDir);
@@ -729,12 +730,12 @@ public class MainView : Window
 
     private void LoadFolder()
     {
-        if (_currentIndex < 0 || _currentIndex >= _playlist.Count) { MessageBox.Query(Application.Instance, 50, 5, "No song", "No song is currently playing", "OK"); return; }
+        if (_currentIndex < 0 || _currentIndex >= _playlist.Count) { MessageBox.Query(Application.Instance, 50, 5, "没有歌曲", "当前没有正在播放的歌曲", "确定"); return; }
         var dir = Path.GetDirectoryName(_playlist[_currentIndex]); if (dir == null || !Directory.Exists(dir)) return;
         var added = 0;
         foreach (var f in Directory.EnumerateFiles(dir, "*.*", SearchOption.TopDirectoryOnly)) if (IsMusicFile(f) && !_playlist.Contains(f)) { _playlist.Add(f); added++; }
         _lstFiles.SetSource(_playlist);
-        MessageBox.Query(Application.Instance, 50, 5, "Done", $"Loaded {added} songs from folder", "OK");
+        MessageBox.Query(Application.Instance, 50, 5, "完成", $"从文件夹载入了 {added} 首歌曲", "确定");
     }
 
     private void ClearAll() { _midi.Stop(); _midiPath = null; _player.Close(); _playlist.Clear(); _currentIndex = -1; _lrc = null; _lblTitle.Text = "Whisper"; _lstFiles.SetSource(_playlist); }
@@ -837,7 +838,7 @@ public class MainView : Window
     private void PlayIndex(int idx)
     {
         if (idx < 0 || idx >= _playlist.Count) return; var path = _playlist[idx];
-        if (!File.Exists(path)) { _lblTitle.Text = $"File not found: {Path.GetFileName(path)}"; _playlist.RemoveAt(idx); _lstFiles.SetSource(_playlist); if (idx < _playlist.Count) { _currentIndex = idx; _lstFiles.SelectedItem = idx; PlayIndex(idx); } else if (_playlist.Count > 0) { _currentIndex = _playlist.Count - 1; _lstFiles.SelectedItem = _currentIndex; PlayIndex(_currentIndex); } else _currentIndex = -1; return; }
+        if (!File.Exists(path)) { _lblTitle.Text = $"文件不存在: {Path.GetFileName(path)}"; _playlist.RemoveAt(idx); _lstFiles.SetSource(_playlist); if (idx < _playlist.Count) { _currentIndex = idx; _lstFiles.SelectedItem = idx; PlayIndex(idx); } else if (_playlist.Count > 0) { _currentIndex = _playlist.Count - 1; _lstFiles.SelectedItem = _currentIndex; PlayIndex(_currentIndex); } else _currentIndex = -1; return; }
 
         var ext = Path.GetExtension(path).ToLower();
         if (ext is ".mid" or ".midi")
@@ -916,12 +917,12 @@ public class MainView : Window
             var dur = _midi.Length;
             var notes = _midiParser?.Notes.Count ?? 0;
 
-            _metaLabels[0].Text = $"File: {fname}";
-            _metaLabels[1].Text = $"Size: {sizeKB:F0} KB";
-            _metaLabels[2].Text = $"Type: MIDI";
-            _metaLabels[3].Text = $"Notes: {notes}";
-            _metaLabels[4].Text = $"Dur:  {dur:m\\:ss}";
-            _metaLabels[5].Text = $"Synth: MS GS";
+            _metaLabels[0].Text = $"文件: {fname}";
+            _metaLabels[1].Text = $"大小: {sizeKB:F0} KB";
+            _metaLabels[2].Text = $"格式: MIDI";
+            _metaLabels[3].Text = $"音符数: {notes}";
+            _metaLabels[4].Text = $"时长:  {dur:m\\:ss}";
+            _metaLabels[5].Text = $"合成器: MS GS";
             _metaLabels[6].Text = "";
             _metaLabels[7].Text = "";
         }
@@ -999,12 +1000,12 @@ public class MainView : Window
         if (names.Count > 0)
         {
             _currentDevice = _deviceIds[selected];
-            _btnDevice.Text = $"Dev: {names[selected]}";
+            _btnDevice.Text = $"设备: {names[selected]}";
         }
         else
         {
             _currentDevice = -1;
-            _btnDevice.Text = "Dev: -";
+            _btnDevice.Text = "设备: -";
         }
     }
 
@@ -1014,7 +1015,7 @@ public class MainView : Window
         var idx = _deviceIds.IndexOf(_currentDevice);
         idx = (idx + 1) % _deviceNames.Count;
         _currentDevice = _deviceIds[idx];
-        _btnDevice.Text = $"Dev: {_deviceNames[idx]}";
+        _btnDevice.Text = $"设备: {_deviceNames[idx]}";
         _player.SwitchDevice(_currentDevice);
     }
 
@@ -1048,7 +1049,7 @@ public class MainView : Window
             {
                 var names = string.Join("\n", nonMusic.Take(5).Select(Path.GetFileName));
                 if (nonMusic.Count > 5) names += $"\n... +{nonMusic.Count - 5} more";
-                MessageBox.Query(Application.Instance, 50, 8, "Not audio", $"Skipped non-audio file(s):\n{names}", "OK");
+                MessageBox.Query(Application.Instance, 50, 8, "非音频", $"已跳过非音频文件：\n{names}", "确定");
             }
         }
 
@@ -1064,7 +1065,7 @@ public class MainView : Window
         _volBar.Enabled = _midiPath == null;
         _btnSpeed.Enabled = _midiPath == null;
         _volBar.Fraction = _player.Volume;
-        _btnPlayPause.Text = (_midiPath != null ? _midi.IsPlaying : _player.IsPlaying) ? "_Pause" : "_Play";
+        _btnPlayPause.Text = (_midiPath != null ? _midi.IsPlaying : _player.IsPlaying) ? "_暂停" : "_播放";
 
         // Spectrum
         // Spectrum（MIDI 从解析器获取，暂停时归零；BASS 从 FFT）

@@ -23,13 +23,13 @@ public class EqWindow : Window
 
     public EqWindow(Whisper.Core.Player player)
     {
-        Title = "Equalizer";
+        Title = "均衡器";
         _player = player;
         X = Pos.Center(); Y = Pos.Center();
         Width = 58; Height = 11;
 
         // Enable
-        _cbEnable = new CheckBox { Text = "Enable", X = 1, Y = 0, Value = player.EqEnabled ? CheckState.Checked : CheckState.UnChecked };
+        _cbEnable = new CheckBox { Text = "启用", X = 1, Y = 0, Value = player.EqEnabled ? CheckState.Checked : CheckState.UnChecked };
         _cbEnable.ValueChanged += (_, _) => {
             var on = _cbEnable.Value == CheckState.Checked;
             _player.ToggleEq(on);
@@ -38,7 +38,7 @@ public class EqWindow : Window
         Add(_cbEnable);
 
         // Preset as prev/name/next buttons
-        var lblPr = new Label { Text = "Preset:", X = 10, Y = 0 };
+        var lblPr = new Label { Text = "预设:", X = 8, Y = 0 };
         Add(lblPr);
 
         _btnPrev = new Button { Text = "<", X = 18, Y = 0, Width = 3, Height = 1, NoPadding = true };
@@ -54,7 +54,7 @@ public class EqWindow : Window
 
         // Find current preset
         _presetIdx = FindPreset(player.EqGains);
-        _lblPresetName.Text = _presetIdx >= 0 ? Player.EqPresets[_presetIdx].Name : "Custom";
+        _lblPresetName.Text = _presetIdx >= 0 ? Player.EqPresets[_presetIdx].Name : "自定义";
 
         // 10 bands
         for (int i = 0; i < 10; i++)
@@ -70,12 +70,12 @@ public class EqWindow : Window
 
             var band = i;
             var up = new Button { Text = "+", X = x, Y = 4, Width = 3, Height = 1, NoPadding = true };
-            up.Accepting += (_, _) => { player.SetEqBand(band, player.EqGains[band] + 1); RefreshGains(); _presetIdx = -1; _lblPresetName.Text = "Custom"; };
+            up.Accepting += (_, _) => { player.SetEqBand(band, player.EqGains[band] + 1); RefreshGains(); _presetIdx = -1; _lblPresetName.Text = "自定义"; };
             _btns[i, 0] = up;
             Add(up);
 
             var dn = new Button { Text = "-", X = x, Y = 5, Width = 3, Height = 1, NoPadding = true };
-            dn.Accepting += (_, _) => { player.SetEqBand(band, player.EqGains[band] - 1); RefreshGains(); _presetIdx = -1; _lblPresetName.Text = "Custom"; };
+            dn.Accepting += (_, _) => { player.SetEqBand(band, player.EqGains[band] - 1); RefreshGains(); _presetIdx = -1; _lblPresetName.Text = "自定义"; };
             _btns[i, 1] = dn;
             Add(dn);
         }
@@ -83,15 +83,15 @@ public class EqWindow : Window
         RefreshGains();  // 修复重新进入时颜色不正确的 bug
 
         // OK + Reset
-        var btnOk = new Button { NoPadding = true, Text = "OK", X = 20, Y = 7 };
+        var btnOk = new Button { NoPadding = true, Text = "确定", X = 18, Y = 7 };
         btnOk.Accepting += (_, _) => Application.RequestStop(this);
         Add(btnOk);
 
-        var btnReset = new Button { NoPadding = true, Text = "Reset", X = 32, Y = 7 };
+        var btnReset = new Button { NoPadding = true, Text = "重置", X = 32, Y = 7 };
         btnReset.Accepting += (_, _) => {
             for (int i = 0; i < 10; i++) _player.SetEqBand(i, 0);
             _presetIdx = 0;
-            _lblPresetName.Text = "Flat";
+            _lblPresetName.Text = "平直";
             RefreshGains();
         };
         Add(btnReset);
