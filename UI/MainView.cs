@@ -642,7 +642,9 @@ public class MainView : Window
             case ':': if (_lastWasDriveLetter) { _lastWasDriveLetter = false; _pathBuffer.Append(':'); return; } _inCmdMode = true; _cmdBuffer.Clear(); UpdateCmdPrompt(); return;
             case ' ': TogglePlayPause(); return;
             case ',': Prev(); return; case '.': Next(); return;
-            case 'c': _player.LoopA = null; _player.LoopB = null; UpdateLoopLabel(); return;
+            case 'a': case 'A': _player.LoopA = _player.Position; UpdateLoopLabel(); return;
+            case 'b': case 'B': _player.LoopB = _player.Position; UpdateLoopLabel(); return;
+            case 'c': case 'C': _player.LoopA = null; _player.LoopB = null; UpdateLoopLabel(); return;
             case 's': SortPlaylist(); return;
             case '8': Toggle8Bit(); return;
             case 'e': case 'E': EqWindow.Show(_player); return;
