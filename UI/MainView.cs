@@ -190,7 +190,8 @@ public class MainView : Window
 
         // === Metadata GroupBox (left, fixed size) ===
         _metaView = new FrameView {
-            Title = "Metadata", X = 0, Y = MetaY, Width = MetaWidth, Height = MetaHeight
+            Title = "Metadata", X = 0, Y = MetaY, Width = MetaWidth, Height = MetaHeight,
+            BorderStyle = LineStyle.Single
         };
         _metaView.SetScheme(cWindow);
         for (int i = 0; i < 9; i++)
@@ -205,7 +206,7 @@ public class MainView : Window
         var metaOverflows = MetaY + MetaHeight > PlaylistY;
         var playlistW = metaOverflows ? Dim.Fill(MetaWidth) : Dim.Percent(65);
 
-        _spectrumView = new FrameView { Title = "Spectrum", X = 0, Y = PlaylistY, Width = Dim.Percent(35), Height = Dim.Fill(3) };
+        _spectrumView = new FrameView { Title = "Spectrum", X = 0, Y = PlaylistY, Width = Dim.Percent(35), Height = Dim.Fill(3), BorderStyle = LineStyle.Single };
         _spectrumView.SetScheme(cWindow);
         var specLbls = new[] { "Ovl", "Sub", "L1 ", "L2 ", "L3 ", "L4 ", "M1 ", "M2 ", "M3 ", "M4 ", "H1 ", "H2 ", "H3 ", "H4 ", "Hi1", "Hi2", "Hi3" };
         var specCyan = new Scheme { Normal = new Attribute(Color.BrightCyan, Color.Black) };

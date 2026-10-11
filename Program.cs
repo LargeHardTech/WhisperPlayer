@@ -49,6 +49,9 @@ internal static class Program
         ConsoleDragDrop.Init(ExternalArgsQueue);
 
         Args = args;
+        // v2.5.0 按钮默认 Opaque 阴影会吃 1px 空间，Height=1 的按钮会被裁成 0 → 关掉
+        Terminal.Gui.Configuration.ButtonSettings.Current =
+            Terminal.Gui.Configuration.ButtonSettings.Current with { DefaultShadow = ShadowStyles.None };
         try { Application.Init(); }
         catch (Exception ex)
         {
