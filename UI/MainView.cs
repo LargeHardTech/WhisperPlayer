@@ -24,7 +24,7 @@ public class MainView : Window
     private readonly CharAnim _charAnim;
     private double _animTime;
     private Scheme _schemeAnim = null!, _schemeCurr = null!, _schemeDim = null!;
-    private Button _btnDevice = null!;
+    private DropDownList _ddlDevice = null!;
     private List<int> _deviceIds = [];
     private List<string> _deviceNames = [];
     private int _currentDevice = -1;  // BASS device index
@@ -163,13 +163,18 @@ public class MainView : Window
             X = 0, Y = 0, Width = Dim.Fill(36), Height = 1
         };
         _lblTitle.SetScheme(cNormal);
+        _ddlDevice = new DropDownList { X = Pos.AnchorEnd(34), Y = 0, Width = 34, Height = 1 };
         var btnDevReload = new Button { NoPadding = true,
-            Text = "刷新", X = Pos.AnchorEnd(40), Y = 0, Width = 6, Height = 1
+            Text = "刷新", X = Pos.Left(_ddlDevice) - 7, Y = 0, Width = 6, Height = 1
         };
-        _btnDevice = new Button { NoPadding = true,
-            Text = "设备: -", X = Pos.Right(btnDevReload) + 1, Y = 0, Width = 30, Height = 1
+        _ddlDevice.Accepting += (_, _) => {
+            var i = _deviceNames.IndexOf(_ddlDevice.Text ?? "");
+            if (i >= 0 && i < _deviceIds.Count)
+            {
+                _currentDevice = _deviceIds[i];
+                _player.SwitchDevice(_currentDevice);
+            }
         };
-        _btnDevice.Accepting += (_, _) => CycleDevice();
         PopulateDevices();
         btnDevReload.Accepting += (_, _) => {
             PopulateDevices();
@@ -250,6 +255,7 @@ public class MainView : Window
         // Volume row
         var lblVol = new Label { Text = "音量:", X = 0, Y = volY, Width = 5, Height = 1 };
         _volBar = new ProgressBar { X = Pos.Right(lblVol) + 1, Y = volY, Width = 20, Height = 1, Fraction = 0.8f };
+        _volBar.SetScheme(progBar);  // 音量条背景与进度条一致
         _player.Volume = 0.8f;
 
         _btnSpeed = new Button { NoPadding = true, Text = "1.00x", X = Pos.Right(_volBar) + 2, Y = volY, Width = 8, Height = 1 };
@@ -258,7 +264,7 @@ public class MainView : Window
         _btnMode.Accepting += (_, _) => { _modeIdx = (_modeIdx + 1) % Modes.Length; _btnMode.Text = Modes[_modeIdx]; _player.Mode = (PlayMode)_modeIdx; };
         var _btnEQ = new Button { NoPadding = true, Text = "_均衡", X = Pos.Right(_btnMode) + 1, Y = volY, Width = 8, Height = 1 };
         _btnEQ.Accepting += (_, _) => EqWindow.Show(_player);
-        _btn8Bit = new Button { NoPadding = true, Text = "8_位", X = Pos.Right(_btnEQ) + 1, Y = volY, Width = 8, Height = 1 };
+        _btn8Bit = new Button { NoPadding = true, Text = "_8位", X = Pos.Right(_btnEQ) + 1, Y = volY, Width = 8, Height = 1 };
         _btn8BitDefault = _btn8Bit.GetScheme();
         _btn8Bit.Accepting += (_, _) => Toggle8Bit();
         var btnLoopA = new Button { NoPadding = true, Text = "_A", X = Pos.Right(_btn8Bit) + 1, Y = volY, Width = 6, Height = 1 }; btnLoopA.Accepting += (_, _) => { _player.LoopA = _player.Position; UpdateLoopLabel(); };
@@ -274,7 +280,7 @@ public class MainView : Window
         _lblCmdInput = new Label { X = 4, Y = helpY, Width = Dim.Fill(), Height = 1, Visible = false };
         _lblCmdInput.SetScheme(_schemeCmdInput);
 
-        Add(_lblTitle, _lblTime, _progress, _btnDevice, btnDevReload, _metaView);
+        Add(_lblTitle, _lblTime, _progress, _ddlDevice, btnDevReload, _metaView);
         foreach (var l in _lrcLabels) Add(l);
         Add(lstLabel, _lstFiles, _spectrumView,
             btnPrev, btnNext, _btnPlayPause, btnStop, btnOpen, btnDir, btnDel, btnLoopA, btnLoopB, btnClear, btnAbort, btnSort, btnClrAll,
@@ -574,7 +580,15 @@ public class MainView : Window
         if (_dialogOpen) return;
 
         var c = ke.TryGetPrintableRune(out var pr) ? (char)pr.Value : '\0';
-        if (ke.IsCtrl) { ke.Handled = true; _pathBuffer.Clear(); if (c == 'o' || c == 'O') { OpenFiles(); } else if (c == 'q' || c == 'Q') { Application.RequestStop(); } return; }
+        var ctrlO = KeyCode.CtrlMask | (KeyCode)(uint)'O';
+        var ctrlQ = KeyCode.CtrlMask | (KeyCode)(uint)'Q';
+        if (ke.IsCtrl || (ke.KeyCode & KeyCode.CtrlMask) != 0)
+        {
+            ke.Handled = true; _pathBuffer.Clear();
+            if (ke.KeyCode == ctrlO || c is 'o' or 'O') { OpenFiles(); }
+            else if (ke.KeyCode == ctrlQ || c is 'q' or 'Q') { Application.RequestStop(); }
+            return;
+        }
         if (ke.KeyCode == KeyCode.CursorLeft) { ke.Handled = true; _pathBuffer.Clear(); Seek(-5); return; }
         if (ke.KeyCode == KeyCode.CursorRight) { ke.Handled = true; _pathBuffer.Clear(); Seek(5); return; }
         if (ke.KeyCode == KeyCode.CursorUp) { ke.Handled = true; _pathBuffer.Clear(); if (_midiPath == null) _player.Volume = Math.Clamp(_player.Volume + 0.05f, 0, 1); return; }
@@ -723,7 +737,18 @@ public class MainView : Window
         _dialogOpen = true;
         Application.Run(dlg); _dialogOpen = false; if (dlg.Canceled) return;
         var firstPath = dlg.FilePaths.FirstOrDefault(); if (firstPath != null) SaveLastDir(Path.GetDirectoryName(firstPath) ?? lastDir);
-        foreach (var f in dlg.FilePaths) if (File.Exists(f) && !_playlist.Contains(f)) _playlist.Add(f);
+        var skipped = new List<string>();
+        foreach (var f in dlg.FilePaths)
+        {
+            if (!File.Exists(f) || _playlist.Contains(f)) continue;
+            if (IsMusicFile(f)) _playlist.Add(f); else skipped.Add(f);
+        }
+        if (skipped.Count > 0)
+        {
+            var names = string.Join("\n", skipped.Take(5).Select(Path.GetFileName));
+            if (skipped.Count > 5) names += $"\n... +{skipped.Count - 5} 个";
+            MessageBox.Query(Application.Instance, 50, 8, "非音频", $"已跳过不支持的文件：\n{names}", "确定");
+        }
         _lstFiles.SetSource(_playlist);
         if (_currentIndex < 0 && _playlist.Count > 0) { _currentIndex = 0; _lstFiles.SelectedItem = 0; PlayIndex(0); }
     }
@@ -857,7 +882,21 @@ public class MainView : Window
             _midi.Stop();
             _midiPath = null;
             _midiParser = null;
-            _player.Open(path); if (_currentDevice >= 0) _player.SwitchDevice(_currentDevice); if (_player.Is8Bit) _player.ApplyDsp8Bit(); var name = Path.GetFileNameWithoutExtension(path); _lblTitle.Text = name;
+            try
+            {
+                _player.Open(path);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Query(Application.Instance, 55, 8, "播放失败",
+                    $"无法打开该文件（格式不支持或文件损坏）：\n{Path.GetFileName(path)}\n\n{ex.Message}", "确定");
+                _playlist.RemoveAt(idx);
+                _lstFiles.SetSource(_playlist);
+                if (_playlist.Count > 0) { _currentIndex = Math.Min(idx, _playlist.Count - 1); _lstFiles.SelectedItem = _currentIndex; PlayIndex(_currentIndex); }
+                else _currentIndex = -1;
+                return;
+            }
+            if (_currentDevice >= 0) _player.SwitchDevice(_currentDevice); if (_player.Is8Bit) _player.ApplyDsp8Bit(); var name = Path.GetFileNameWithoutExtension(path); _lblTitle.Text = name;
             var lrcPath = Path.ChangeExtension(path, ".lrc"); if (File.Exists(lrcPath)) { _lrc = LrcParser.Parse(lrcPath); if (_lrc.Title != null) _lblTitle.Text = _lrc.Artist != null ? $"{_lrc.Artist} - {_lrc.Title}" : _lrc.Title; } else _lrc = null;
             UpdateMetadata(path);
             // 视频：打开 FFmpeg 解码
@@ -893,15 +932,15 @@ public class MainView : Window
             if (artist.Length > 20) artist = artist[..17] + "...";
             if (album.Length > 20) album = album[..17] + "...";
 
-            _metaLabels[0].Text = $"File: {fname}";
-            _metaLabels[1].Text = $"Size: {sizeMB:F1} MB";
-            _metaLabels[2].Text = $"Rate: {rate} Hz";
-            _metaLabels[3].Text = $"Chan: {(chan == 1 ? "Mono" : chan == 2 ? "Stereo" : $"{chan}ch")}";
-            _metaLabels[4].Text = $"Type: {ext}";
-            _metaLabels[5].Text = $"Br:  {br} kbps";
-            _metaLabels[6].Text = $"Art: {artist}";
-            _metaLabels[7].Text = $"Alb: {album}";
-            _metaLabels[8].Text = $"Date: {fi.CreationTime:yyyy-MM-dd}";
+            _metaLabels[0].Text = $"文件: {fname}";
+            _metaLabels[1].Text = $"大小: {sizeMB:F1} MB";
+            _metaLabels[2].Text = $"采样率: {rate} Hz";
+            _metaLabels[3].Text = $"声道: {(chan == 1 ? "单声道" : chan == 2 ? "立体声" : $"{chan}声道")}";
+            _metaLabels[4].Text = $"格式: {ext}";
+            _metaLabels[5].Text = $"比特率: {br} kbps";
+            _metaLabels[6].Text = $"艺术家: {artist}";
+            _metaLabels[7].Text = $"专辑: {album}";
+            _metaLabels[8].Text = $"日期: {fi.CreationTime:yyyy-MM-dd}";
         }
         catch { }
     }
@@ -997,26 +1036,16 @@ public class MainView : Window
             _deviceIds.Add(i);
         }
         _deviceNames = names;
+        _ddlDevice.Source = new ListWrapper<string>(new System.Collections.ObjectModel.ObservableCollection<string>(names));
         if (names.Count > 0)
         {
             _currentDevice = _deviceIds[selected];
-            _btnDevice.Text = $"设备: {names[selected]}";
+            _ddlDevice.Text = names[selected];
         }
         else
         {
             _currentDevice = -1;
-            _btnDevice.Text = "设备: -";
         }
-    }
-
-    private void CycleDevice()
-    {
-        if (_deviceNames.Count == 0) return;
-        var idx = _deviceIds.IndexOf(_currentDevice);
-        idx = (idx + 1) % _deviceNames.Count;
-        _currentDevice = _deviceIds[idx];
-        _btnDevice.Text = $"设备: {_deviceNames[idx]}";
-        _player.SwitchDevice(_currentDevice);
     }
 
     private void Refresh()
