@@ -10,6 +10,7 @@
     <Copyright>LargeHardTech</Copyright>
     <Company>LargeHardTech</Company>
     <Authors>LargeHardTech</Authors>
+    <ApplicationIcon>assets\Whisper_Icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
