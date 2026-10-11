@@ -4,7 +4,13 @@ using System.Threading;
 using Whisper.Core;
 using Whisper.UI;
 using System.Runtime.InteropServices;
-using Terminal.Gui;
+using Terminal.Gui.App;
+using Terminal.Gui.ViewBase;
+using Terminal.Gui.Views;
+using Terminal.Gui.Input;
+using Terminal.Gui.Drivers;
+using Terminal.Gui.Drawing;
+using Attribute = Terminal.Gui.Drawing.Attribute;
 
 namespace Whisper;
 
@@ -58,7 +64,7 @@ internal static class Program
             var enHkl = LoadKeyboardLayout("00000409", 1); // US English
             ActivateKeyboardLayout(enHkl, 0);
 
-            Application.Run(new MainView());
+            Application.Run(new MainView(), null);
 
             // 恢复
             ActivateKeyboardLayout(hkl, 0);

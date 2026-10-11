@@ -1,4 +1,10 @@
-using Terminal.Gui;
+using Terminal.Gui.App;
+using Terminal.Gui.ViewBase;
+using Terminal.Gui.Views;
+using Terminal.Gui.Input;
+using Terminal.Gui.Drivers;
+using Terminal.Gui.Drawing;
+using Attribute = Terminal.Gui.Drawing.Attribute;
 using Whisper.Core;
 
 namespace Whisper.UI;
@@ -15,33 +21,35 @@ public class EqWindow : Window
     private int _presetIdx;
     private bool _suppress;
 
-    public EqWindow(Whisper.Core.Player player) : base("Equalizer")
+    public EqWindow(Whisper.Core.Player player)
     {
+        Title = "Equalizer";
         _player = player;
         X = Pos.Center(); Y = Pos.Center();
         Width = 58; Height = 11;
 
         // Enable
-        _cbEnable = new CheckBox(1, 0, "Enable") { Checked = player.EqEnabled };
-        _cbEnable.Toggled += _ => {
-            _player.ToggleEq(_cbEnable.Checked);
-            SetControlsEnabled(!_cbEnable.Checked);
+        _cbEnable = new CheckBox { Text = "Enable", X = 1, Y = 0, Value = player.EqEnabled ? CheckState.Checked : CheckState.UnChecked };
+        _cbEnable.ValueChanged += (_, _) => {
+            var on = _cbEnable.Value == CheckState.Checked;
+            _player.ToggleEq(on);
+            SetControlsEnabled(!on);
         };
         Add(_cbEnable);
 
         // Preset as prev/name/next buttons
-        var lblPr = new Label(10, 0, "Preset:");
+        var lblPr = new Label { Text = "Preset:", X = 10, Y = 0 };
         Add(lblPr);
 
-        _btnPrev = new Button(18, 0, "<") { Width = 3 };
-        _btnPrev.Clicked += () => CyclePreset(-1);
+        _btnPrev = new Button { Text = "<", X = 18, Y = 0, Width = 3 };
+        _btnPrev.Accepting += (_, _) => CyclePreset(-1);
         Add(_btnPrev);
 
-        _lblPresetName = new Label(23, 0, "") { Width = 14 };
+        _lblPresetName = new Label { Text = "", X = 23, Y = 0, Width = 14 };
         Add(_lblPresetName);
 
-        _btnNext = new Button(38, 0, ">") { Width = 3 };
-        _btnNext.Clicked += () => CyclePreset(1);
+        _btnNext = new Button { Text = ">", X = 38, Y = 0, Width = 3 };
+        _btnNext.Accepting += (_, _) => CyclePreset(1);
         Add(_btnNext);
 
         // Find current preset
@@ -53,21 +61,21 @@ public class EqWindow : Window
         {
             var x = 1 + i * 5;
             var freq = Player.EqFreqs[i];
-            var hdr = new Label(x, 2, freq >= 1000 ? $"{freq / 1000}k" : $"{freq}");
+            var hdr = new Label { Text = freq >= 1000 ? $"{freq / 1000}k" : $"{freq}", X = x, Y = 2 };
             Add(hdr);
 
-            var lbl = new Label(x, 3, "") { Width = 4 };
+            var lbl = new Label { Text = "", X = x, Y = 3, Width = 4 };
             _lblGains[i] = lbl;
             Add(lbl);
 
             var band = i;
-            var up = new Button(x, 4, "+") { Width = 3 };
-            up.Clicked += () => { player.SetEqBand(band, player.EqGains[band] + 1); RefreshGains(); _presetIdx = -1; _lblPresetName.Text = "Custom"; };
+            var up = new Button { Text = "+", X = x, Y = 4, Width = 3 };
+            up.Accepting += (_, _) => { player.SetEqBand(band, player.EqGains[band] + 1); RefreshGains(); _presetIdx = -1; _lblPresetName.Text = "Custom"; };
             _btns[i, 0] = up;
             Add(up);
 
-            var dn = new Button(x, 5, "-") { Width = 3 };
-            dn.Clicked += () => { player.SetEqBand(band, player.EqGains[band] - 1); RefreshGains(); _presetIdx = -1; _lblPresetName.Text = "Custom"; };
+            var dn = new Button { Text = "-", X = x, Y = 5, Width = 3 };
+            dn.Accepting += (_, _) => { player.SetEqBand(band, player.EqGains[band] - 1); RefreshGains(); _presetIdx = -1; _lblPresetName.Text = "Custom"; };
             _btns[i, 1] = dn;
             Add(dn);
         }
@@ -75,12 +83,12 @@ public class EqWindow : Window
         RefreshGains();  // 修复重新进入时颜色不正确的 bug
 
         // OK + Reset
-        var btnOk = new Button(20, 7, "OK");
-        btnOk.Clicked += () => Application.RequestStop(this);
+        var btnOk = new Button { Text = "OK", X = 20, Y = 7 };
+        btnOk.Accepting += (_, _) => Application.RequestStop(this);
         Add(btnOk);
 
-        var btnReset = new Button(32, 7, "Reset");
-        btnReset.Clicked += () => {
+        var btnReset = new Button { Text = "Reset", X = 32, Y = 7 };
+        btnReset.Accepting += (_, _) => {
             for (int i = 0; i < 10; i++) _player.SetEqBand(i, 0);
             _presetIdx = 0;
             _lblPresetName.Text = "Flat";
@@ -122,11 +130,11 @@ public class EqWindow : Window
             _lblGains[i].Text = GainText(_player.EqGains[i]);
             var c = _player.EqGains[i] switch
             {
-                > 0 => Application.Driver.MakeAttribute(Color.BrightGreen, Color.Black),
-                < 0 => Application.Driver.MakeAttribute(Color.BrightRed, Color.Black),
-                _ => Application.Driver.MakeAttribute(Color.Gray, Color.Black)
+                > 0 => new Attribute(Color.BrightGreen, Color.Black),
+                < 0 => new Attribute(Color.BrightRed, Color.Black),
+                _ => new Attribute(Color.Gray, Color.Black)
             };
-            _lblGains[i].ColorScheme = new ColorScheme { Normal = c };
+            _lblGains[i].SetScheme(new Scheme { Normal = c });
         }
     }
 
@@ -146,7 +154,7 @@ public class EqWindow : Window
         if (_isOpen) return;
         _isOpen = true;
         var w = new EqWindow(player);
-        Application.Run(w);
+        Application.Run(w, null);
         _isOpen = false;
     }
 }

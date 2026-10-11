@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PublishAot>true</PublishAot>
@@ -23,18 +23,21 @@
 
   <ItemGroup>
     <PackageReference Include="ManagedBass" Version="4.0.2" />
-    <PackageReference Include="Terminal.Gui" Version="1.19.0" />
+    <PackageReference Include="Terminal.Gui" Version="2.5.0" />
   </ItemGroup>
 
-  <!-- bass.dll + bass_fx.dll + bass_aac.dll + ffmpeg.exe → 编译时复制到输出 -->
+  <!-- libonigwrap.dll 已嵌入 exe，发布时删除外部副本（AOT 在 ComputeFilesToPublish 之后复制 native 资产） -->
+  <Target Name="RemoveEmbeddedNatives" AfterTargets="Publish">
+    <Delete Files="$(PublishDir)libonigwrap.dll;$(PublishDir)bass_aac.dll" />
+  </Target>
+
+  <!-- bass.dll + bass_fx.dll + bass_aac.dll + ffmpeg.exe + libonigwrap.dll → 编译时嵌入，运行时自解压 -->
   <ItemGroup>
     <EmbeddedResource Include="bass.dll" />
     <EmbeddedResource Include="bass_fx.dll" />
     <EmbeddedResource Include="bass_aac.dll" />
     <EmbeddedResource Include="ffmpeg.exe.br" />
-    <Content Include="bass_aac.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <EmbeddedResource Include="$(NuGetPackageRoot)onigwrap/1.0.11/runtimes/win-x64/native/libonigwrap.dll" Link="libonigwrap.dll" />
   </ItemGroup>
 
 </Project>

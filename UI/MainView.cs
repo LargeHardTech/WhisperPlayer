@@ -1,5 +1,11 @@
 using System.Text;
-using Terminal.Gui;
+using Terminal.Gui.App;
+using Terminal.Gui.ViewBase;
+using Terminal.Gui.Views;
+using Terminal.Gui.Input;
+using Terminal.Gui.Drivers;
+using Terminal.Gui.Drawing;
+using Attribute = Terminal.Gui.Drawing.Attribute;
 using Whisper.Core;
 
 namespace Whisper.UI;
@@ -8,20 +14,20 @@ public class MainView : Window
 {
     private readonly Player _player = Program.Player;
     private readonly MidiPlayer _midi = new();
-    private readonly List<string> _playlist = [];
+    private readonly System.Collections.ObjectModel.ObservableCollection<string> _playlist = [];
     private Label _lblHelp = null!;
     private Label _lblCmdPrompt = null!, _lblCmdInput = null!;
-    private ColorScheme _schemeCmdPrompt = null!, _schemeCmdInput = null!, _schemeCmdError = null!;
+    private Scheme _schemeCmdPrompt = null!, _schemeCmdInput = null!, _schemeCmdError = null!;
     private int _currentIndex = -1;
     private LrcParser? _lrc;
     private readonly Random _rng = new();
     private readonly CharAnim _charAnim;
     private double _animTime;
-    private ColorScheme _schemeAnim = null!, _schemeCurr = null!, _schemeDim = null!;
-    private readonly ComboBox _cmbDevice;
+    private Scheme _schemeAnim = null!, _schemeCurr = null!, _schemeDim = null!;
+    private Button _btnDevice = null!;
     private List<int> _deviceIds = [];
-    private int _currentDevice = -1;  // ComboBox index → BASS device index
-    private Action<ListViewItemEventArgs>? _deviceChangedHandler;
+    private List<string> _deviceNames = [];
+    private int _currentDevice = -1;  // BASS device index
     private readonly CommandEngine _cmdEngine = new();
     private bool _inCmdMode;
     private bool _cmdErrorShown;
@@ -33,7 +39,7 @@ public class MainView : Window
     private DateTime _scriptWaitUntil;  // 等待计时
     private bool _scriptWaitDone;      // 等待歌曲播完
     private readonly StringBuilder _cmdBuffer = new();
-    private ColorScheme _schemeCmd = null!;
+    private Scheme _schemeCmd = null!;
 
     private static readonly string ConfigDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".whisper");
@@ -53,7 +59,7 @@ public class MainView : Window
     private readonly Button _btnSpeed;
     private readonly Button _btnMode;
     private readonly Button _btn8Bit;
-    private ColorScheme _btn8BitDefault = null!;
+    private Scheme _btn8BitDefault = null!;
     private readonly ProgressBar[] _spectrumBars = new ProgressBar[17];
     private readonly FrameView _spectrumView;
     private readonly FrameView _metaView;
@@ -77,121 +83,120 @@ public class MainView : Window
     private static readonly float[] Speeds = [0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f];
     private static readonly string[] Modes = ["Sequential", "Single Loop", "Random"];
 
-    public MainView() : base("Whisper Player")
+    public MainView()
     {
-        Border.BorderStyle = BorderStyle.Double;
+        Title = "Whisper Player";
+        BorderStyle = LineStyle.Double;
 
         _charAnim = CharAnim.LoadOrCreate();
-        var cNormal = new ColorScheme {
-            Normal = Application.Driver.MakeAttribute(Color.Green, Color.Black),
-            Focus = Application.Driver.MakeAttribute(Color.Black, Color.DarkGray),
-            HotNormal = Application.Driver.MakeAttribute(Color.BrightBlue, Color.Black),
-            HotFocus = Application.Driver.MakeAttribute(Color.BrightCyan, Color.DarkGray),
-            Disabled = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black)
+        var cNormal = new Scheme {
+            Normal = new Attribute(Color.Green, Color.Black),
+            Focus = new Attribute(Color.Black, Color.DarkGray),
+            HotNormal = new Attribute(Color.BrightBlue, Color.Black),
+            HotFocus = new Attribute(Color.BrightCyan, Color.DarkGray),
+            Disabled = new Attribute(Color.DarkGray, Color.Black)
         };
-        _schemeAnim = new ColorScheme {
-            Normal = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black),
-            Focus = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black),
-            HotNormal = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black),
-            HotFocus = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black),
-            Disabled = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black)
+        _schemeAnim = new Scheme {
+            Normal = new Attribute(Color.DarkGray, Color.Black),
+            Focus = new Attribute(Color.DarkGray, Color.Black),
+            HotNormal = new Attribute(Color.DarkGray, Color.Black),
+            HotFocus = new Attribute(Color.DarkGray, Color.Black),
+            Disabled = new Attribute(Color.DarkGray, Color.Black)
         };
-        _schemeCmdPrompt = new ColorScheme {
-            Normal = Application.Driver.MakeAttribute(Color.Gray, Color.Black),
-            Focus = Application.Driver.MakeAttribute(Color.Gray, Color.Black),
-            HotNormal = Application.Driver.MakeAttribute(Color.Gray, Color.Black),
-            HotFocus = Application.Driver.MakeAttribute(Color.Gray, Color.Black),
-            Disabled = Application.Driver.MakeAttribute(Color.Gray, Color.Black)
+        _schemeCmdPrompt = new Scheme {
+            Normal = new Attribute(Color.Gray, Color.Black),
+            Focus = new Attribute(Color.Gray, Color.Black),
+            HotNormal = new Attribute(Color.Gray, Color.Black),
+            HotFocus = new Attribute(Color.Gray, Color.Black),
+            Disabled = new Attribute(Color.Gray, Color.Black)
         };
-        _schemeCmdInput = new ColorScheme {
-            Normal = Application.Driver.MakeAttribute(Color.BrightYellow, Color.Black),
-            Focus = Application.Driver.MakeAttribute(Color.BrightYellow, Color.Black),
-            HotNormal = Application.Driver.MakeAttribute(Color.BrightYellow, Color.Black),
-            HotFocus = Application.Driver.MakeAttribute(Color.BrightYellow, Color.Black),
-            Disabled = Application.Driver.MakeAttribute(Color.BrightYellow, Color.Black)
+        _schemeCmdInput = new Scheme {
+            Normal = new Attribute(Color.BrightYellow, Color.Black),
+            Focus = new Attribute(Color.BrightYellow, Color.Black),
+            HotNormal = new Attribute(Color.BrightYellow, Color.Black),
+            HotFocus = new Attribute(Color.BrightYellow, Color.Black),
+            Disabled = new Attribute(Color.BrightYellow, Color.Black)
         };
-        _schemeCmdError = new ColorScheme {
-            Normal = Application.Driver.MakeAttribute(Color.Red, Color.Black),
-            Focus = Application.Driver.MakeAttribute(Color.Red, Color.Black),
-            HotNormal = Application.Driver.MakeAttribute(Color.Red, Color.Black),
-            HotFocus = Application.Driver.MakeAttribute(Color.Red, Color.Black),
-            Disabled = Application.Driver.MakeAttribute(Color.Red, Color.Black)
+        _schemeCmdError = new Scheme {
+            Normal = new Attribute(Color.Red, Color.Black),
+            Focus = new Attribute(Color.Red, Color.Black),
+            HotNormal = new Attribute(Color.Red, Color.Black),
+            HotFocus = new Attribute(Color.Red, Color.Black),
+            Disabled = new Attribute(Color.Red, Color.Black)
         };
-        var cWindow = new ColorScheme {
-            Normal = Application.Driver.MakeAttribute(Color.Green, Color.Black),
-            Focus = Application.Driver.MakeAttribute(Color.Green, Color.Black),
-            HotNormal = Application.Driver.MakeAttribute(Color.BrightBlue, Color.Black),
-            HotFocus = Application.Driver.MakeAttribute(Color.BrightCyan, Color.DarkGray),
-            Disabled = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black)
+        var cWindow = new Scheme {
+            Normal = new Attribute(Color.Green, Color.Black),
+            Focus = new Attribute(Color.Green, Color.Black),
+            HotNormal = new Attribute(Color.BrightBlue, Color.Black),
+            HotFocus = new Attribute(Color.BrightCyan, Color.DarkGray),
+            Disabled = new Attribute(Color.DarkGray, Color.Black)
         };
-        ColorScheme = cWindow;
+        SetScheme(cWindow);
 
-        var cDim = new ColorScheme {
-            Normal = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black),
-            Focus = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black),
-            HotNormal = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black),
-            HotFocus = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black),
-            Disabled = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black)
+        var cDim = new Scheme {
+            Normal = new Attribute(Color.DarkGray, Color.Black),
+            Focus = new Attribute(Color.DarkGray, Color.Black),
+            HotNormal = new Attribute(Color.DarkGray, Color.Black),
+            HotFocus = new Attribute(Color.DarkGray, Color.Black),
+            Disabled = new Attribute(Color.DarkGray, Color.Black)
         };
         _schemeDim = cDim;
-        var cCurr = new ColorScheme {
-            Normal = Application.Driver.MakeAttribute(Color.BrightYellow, Color.Black),
-            Focus = Application.Driver.MakeAttribute(Color.BrightYellow, Color.Black),
-            HotNormal = Application.Driver.MakeAttribute(Color.BrightYellow, Color.Black),
-            HotFocus = Application.Driver.MakeAttribute(Color.BrightYellow, Color.Black),
-            Disabled = Application.Driver.MakeAttribute(Color.BrightYellow, Color.Black)
+        var cCurr = new Scheme {
+            Normal = new Attribute(Color.BrightYellow, Color.Black),
+            Focus = new Attribute(Color.BrightYellow, Color.Black),
+            HotNormal = new Attribute(Color.BrightYellow, Color.Black),
+            HotFocus = new Attribute(Color.BrightYellow, Color.Black),
+            Disabled = new Attribute(Color.BrightYellow, Color.Black)
         };
         _schemeCurr = cCurr;
-        var cList = new ColorScheme {
-            Normal = Application.Driver.MakeAttribute(Color.Green, Color.Black),
-            Focus = Application.Driver.MakeAttribute(Color.Black, Color.DarkGray),
-            HotNormal = Application.Driver.MakeAttribute(Color.BrightBlue, Color.Black),
-            HotFocus = Application.Driver.MakeAttribute(Color.Black, Color.DarkGray),
-            Disabled = Application.Driver.MakeAttribute(Color.DarkGray, Color.Black)
+        var cList = new Scheme {
+            Normal = new Attribute(Color.Green, Color.Black),
+            Focus = new Attribute(Color.Black, Color.DarkGray),
+            HotNormal = new Attribute(Color.BrightBlue, Color.Black),
+            HotFocus = new Attribute(Color.Black, Color.DarkGray),
+            Disabled = new Attribute(Color.DarkGray, Color.Black)
         };
 
         // === Top info ===
-        _lblTitle = new Label("Whisper - Press Ctrl+O to open files") {
-            X = 0, Y = 0, Width = Dim.Fill(26), Height = 1, ColorScheme = cNormal
+        _lblTitle = new Label {
+            Text = "Whisper - Press Ctrl+O to open files",
+            X = 0, Y = 0, Width = Dim.Fill(26), Height = 1
         };
-        var btnDevReload = new Button("Refresh") {
-            X = Pos.AnchorEnd(30), Y = 0, Width = 8, Height = 1
+        _lblTitle.SetScheme(cNormal);
+        var btnDevReload = new Button {
+            Text = "Refresh", X = Pos.AnchorEnd(30), Y = 0, Width = 8, Height = 1
         };
-        _cmbDevice = new ComboBox() {
-            X = Pos.Right(btnDevReload) + 1, Y = 0, Width = Dim.Fill(1), Height = 6,
-            ReadOnly = true
+        _btnDevice = new Button {
+            Text = "Dev: -", X = Pos.Right(btnDevReload) + 1, Y = 0, Width = 28, Height = 1
         };
-        _deviceChangedHandler = e => {
-            if (e.Item >= 0 && e.Item < _deviceIds.Count)
-            {
-                _currentDevice = _deviceIds[e.Item];
-                _player.SwitchDevice(_currentDevice);
-            }
-        };
+        _btnDevice.Accepting += (_, _) => CycleDevice();
         PopulateDevices();
-        _cmbDevice.SelectedItemChanged += _deviceChangedHandler;
-        btnDevReload.Clicked += () => {
-            _cmbDevice.SelectedItemChanged -= _deviceChangedHandler;
+        btnDevReload.Accepting += (_, _) => {
             PopulateDevices();
-            _cmbDevice.SelectedItemChanged += _deviceChangedHandler;
             _player.SwitchDevice(_currentDevice);
         };
-        _lblTime = new Label("00:00 / 00:00") { X = 0, Y = 1, Width = 16, Height = 1 };
-        var progBar = new ColorScheme { Normal = Application.Driver.MakeAttribute(Color.Green, Color.DarkGray), HotNormal = Application.Driver.MakeAttribute(Color.BrightGreen, Color.DarkGray) };
-        _progress = new ProgressBar() { X = 18, Y = 1, Width = Dim.Fill(), Height = 1, Fraction = 0, ColorScheme = progBar };
+        _lblTime = new Label { Text = "00:00 / 00:00", X = 0, Y = 1, Width = 16, Height = 1 };
+        var progBar = new Scheme { Normal = new Attribute(Color.Green, Color.DarkGray), HotNormal = new Attribute(Color.BrightGreen, Color.DarkGray) };
+        _progress = new ProgressBar { X = 18, Y = 1, Width = Dim.Fill(), Height = 1, Fraction = 0 };
+        _progress.SetScheme(progBar);
 
         // === Lyrics 11 lines Y=2..12 (right of metadata) ===
         for (int i = 0; i < 11; i++)
-            _lrcLabels[i] = new Label("") { X = MetaWidth + 1, Y = 2 + i, Width = Dim.Fill(), Height = 1,
-                TextAlignment = TextAlignment.Centered, ColorScheme = i == 5 ? cCurr : cDim };
+        {
+            _lrcLabels[i] = new Label { X = MetaWidth + 1, Y = 2 + i, Width = Dim.Fill(), Height = 1,
+                TextAlignment = Alignment.Center };
+            _lrcLabels[i].SetScheme(i == 5 ? cCurr : cDim);
+        }
 
         // === Metadata GroupBox (left, fixed size) ===
-        _metaView = new FrameView("Metadata") {
-            X = 0, Y = MetaY, Width = MetaWidth, Height = MetaHeight, ColorScheme = cWindow
+        _metaView = new FrameView {
+            Title = "Metadata", X = 0, Y = MetaY, Width = MetaWidth, Height = MetaHeight
         };
+        _metaView.SetScheme(cWindow);
         for (int i = 0; i < 9; i++)
         {
-            _metaLabels[i] = new Label("") { X = 0, Y = i, Width = Dim.Fill(), Height = 1, ColorScheme = cNormal };
+            _metaLabels[i] = new Label { X = 0, Y = i, Width = Dim.Fill(), Height = 1 };
+            _metaLabels[i].SetScheme(cNormal);
             _metaView.Add(_metaLabels[i]);
         }
 
@@ -200,88 +205,101 @@ public class MainView : Window
         var metaOverflows = MetaY + MetaHeight > PlaylistY;
         var playlistW = metaOverflows ? Dim.Fill(MetaWidth) : Dim.Percent(65);
 
-        _spectrumView = new FrameView("Spectrum") { X = 0, Y = PlaylistY, Width = Dim.Percent(35), Height = Dim.Fill() - 3, ColorScheme = cWindow };
+        _spectrumView = new FrameView { Title = "Spectrum", X = 0, Y = PlaylistY, Width = Dim.Percent(35), Height = Dim.Fill(3) };
+        _spectrumView.SetScheme(cWindow);
         var specLbls = new[] { "Ovl", "Sub", "L1 ", "L2 ", "L3 ", "L4 ", "M1 ", "M2 ", "M3 ", "M4 ", "H1 ", "H2 ", "H3 ", "H4 ", "Hi1", "Hi2", "Hi3" };
-        var specCyan = new ColorScheme { Normal = Application.Driver.MakeAttribute(Color.BrightCyan, Color.Black) };
-        var specBar = new ColorScheme { Normal = Application.Driver.MakeAttribute(Color.Green, Color.Black) };
+        var specCyan = new Scheme { Normal = new Attribute(Color.BrightCyan, Color.Black) };
+        var specBar = new Scheme { Normal = new Attribute(Color.Green, Color.Black) };
         for (int i = 0; i < 17; i++)
         {
             // 频段标签
-            _spectrumView.Add(new Label(specLbls[i]) { X = 0, Y = i, Width = 4, Height = 1 });
-            _spectrumBars[i] = new ProgressBar() { X = 4, Y = i, Width = Dim.Fill(), Height = 1, Fraction = 0,
-                ColorScheme = i == 0 ? specCyan : specBar };
+            _spectrumView.Add(new Label { Text = specLbls[i], X = 0, Y = i, Width = 4, Height = 1 });
+            _spectrumBars[i] = new ProgressBar { X = 4, Y = i, Width = Dim.Fill(), Height = 1, Fraction = 0 };
+            _spectrumBars[i].SetScheme(i == 0 ? specCyan : specBar);
             _spectrumView.Add(_spectrumBars[i]);
         }
 
         // Playlist (65%, right)
-        var lstLabel = new Label("Playlist:") { X = Pos.Right(_spectrumView), Y = PlaylistY, Width = playlistW, Height = 1, ColorScheme = cNormal };
-        _lstFiles = new ListView(_playlist) { X = Pos.Right(_spectrumView), Y = PlaylistY + 1, Width = playlistW, Height = Dim.Fill() - 3, ColorScheme = cList };
-        _lstFiles.OpenSelectedItem += e => { _currentIndex = e.Item; PlayIndex(e.Item); };
+        var lstLabel = new Label { Text = "Playlist:", X = Pos.Right(_spectrumView), Y = PlaylistY, Width = playlistW, Height = 1 };
+        lstLabel.SetScheme(cNormal);
+        _lstFiles = new ListView { X = Pos.Right(_spectrumView), Y = PlaylistY + 1, Width = playlistW, Height = Dim.Fill(3) };
+        _lstFiles.SetScheme(cList);
+        _lstFiles.SetSource(_playlist);
+        _lstFiles.Accepting += (_, _) => { if (_lstFiles.SelectedItem is int sel && sel >= 0) { _currentIndex = sel; PlayIndex(sel); } };
 
         // === Bottom controls ===
         var btnY = Pos.AnchorEnd(3);
         var volY = Pos.AnchorEnd(2);
         var helpY = Pos.AnchorEnd(1);
 
-        var btnPrev = new Button("_<") { X = 0, Y = btnY, Width = 7, Height = 1 }; btnPrev.Clicked += Prev;
-        var btnNext = new Button("_>") { X = Pos.Right(btnPrev) + 1, Y = btnY, Width = 7, Height = 1 }; btnNext.Clicked += Next;
+        var btnPrev = new Button { Text = "_<", X = 0, Y = btnY, Width = 7, Height = 1 }; btnPrev.Accepting += (_, _) => Prev();
+        var btnNext = new Button { Text = "_>", X = Pos.Right(btnPrev) + 1, Y = btnY, Width = 7, Height = 1 }; btnNext.Accepting += (_, _) => Next();
 
-        _btnPlayPause = new Button("_Play") { X = Pos.Right(btnNext) + 1, Y = btnY, Width = 10, Height = 1 }; _btnPlayPause.Clicked += TogglePlayPause;
-        var btnStop = new Button("_Stop") { X = Pos.Right(_btnPlayPause) + 1, Y = btnY, Width = 9, Height = 1 }; btnStop.Clicked += () => { if (_midiPath != null) _midi.Stop(); else _player.Stop(); if (_isVideo) { _videoMv.Close(); for (int i = 0; i < 11; i++) _lrcLabels[i].Text = ""; } };
-        var btnOpen = new Button("_Open") { X = Pos.Right(btnStop) + 1, Y = btnY, Width = 9, Height = 1 }; btnOpen.Clicked += OpenFiles;
-        var btnDir = new Button("_Load") { X = Pos.Right(btnOpen) + 1, Y = btnY, Width = 9, Height = 1 }; btnDir.Clicked += LoadFolder;
-        var btnDel = new Button("_Del") { X = Pos.Right(btnDir) + 1, Y = btnY, Width = 8, Height = 1 }; btnDel.Clicked += DeleteSelected;
-        var btnAbort = new Button("Abo_rt") { X = Pos.Right(btnDel) + 1, Y = btnY, Width = 9, Height = 1 };
-        btnAbort.Clicked += AbortScript;
-        var btnSort = new Button("_Sort") { X = Pos.Right(btnAbort) + 1, Y = btnY, Width = 9, Height = 1 };
-        btnSort.Clicked += SortPlaylist;
-        var btnClrAll = new Button("Cl_rAll") { X = Pos.Right(btnSort) + 1, Y = btnY, Width = 9, Height = 1 }; btnClrAll.Clicked += ClearAll;
+        _btnPlayPause = new Button { Text = "_Play", X = Pos.Right(btnNext) + 1, Y = btnY, Width = 10, Height = 1 }; _btnPlayPause.Accepting += (_, _) => TogglePlayPause();
+        var btnStop = new Button { Text = "_Stop", X = Pos.Right(_btnPlayPause) + 1, Y = btnY, Width = 9, Height = 1 }; btnStop.Accepting += (_, _) => { if (_midiPath != null) _midi.Stop(); else _player.Stop(); if (_isVideo) { _videoMv.Close(); for (int i = 0; i < 11; i++) _lrcLabels[i].Text = ""; } };
+        var btnOpen = new Button { Text = "_Open", X = Pos.Right(btnStop) + 1, Y = btnY, Width = 9, Height = 1 }; btnOpen.Accepting += (_, _) => OpenFiles();
+        var btnDir = new Button { Text = "_Load", X = Pos.Right(btnOpen) + 1, Y = btnY, Width = 9, Height = 1 }; btnDir.Accepting += (_, _) => LoadFolder();
+        var btnDel = new Button { Text = "_Del", X = Pos.Right(btnDir) + 1, Y = btnY, Width = 8, Height = 1 }; btnDel.Accepting += (_, _) => DeleteSelected();
+        var btnAbort = new Button { Text = "Abo_rt", X = Pos.Right(btnDel) + 1, Y = btnY, Width = 9, Height = 1 };
+        btnAbort.Accepting += (_, _) => AbortScript();
+        var btnSort = new Button { Text = "_Sort", X = Pos.Right(btnAbort) + 1, Y = btnY, Width = 9, Height = 1 };
+        btnSort.Accepting += (_, _) => SortPlaylist();
+        var btnClrAll = new Button { Text = "Cl_rAll", X = Pos.Right(btnSort) + 1, Y = btnY, Width = 9, Height = 1 }; btnClrAll.Accepting += (_, _) => ClearAll();
 
         // Volume row
-        var lblVol = new Label("Vol:") { X = 0, Y = volY, Width = 5, Height = 1 };
-        _volBar = new ProgressBar() { X = Pos.Right(lblVol) + 1, Y = volY, Width = 20, Height = 1, Fraction = 0.8f };
+        var lblVol = new Label { Text = "Vol:", X = 0, Y = volY, Width = 5, Height = 1 };
+        _volBar = new ProgressBar { X = Pos.Right(lblVol) + 1, Y = volY, Width = 20, Height = 1, Fraction = 0.8f };
         _player.Volume = 0.8f;
 
-        _btnSpeed = new Button("1.00x") { X = Pos.Right(_volBar) + 2, Y = volY, Width = 8, Height = 1 };
-        _btnSpeed.Clicked += () => { _speedIdx = (_speedIdx + 1) % Speeds.Length; _btnSpeed.Text = $"{Speeds[_speedIdx]:F2}x"; _player.Speed = Speeds[_speedIdx]; _player.ApplySpeed(); };
-        _btnMode = new Button(Modes[0]) { X = Pos.Right(_btnSpeed) + 1, Y = volY, Width = 12, Height = 1 };
-        _btnMode.Clicked += () => { _modeIdx = (_modeIdx + 1) % Modes.Length; _btnMode.Text = Modes[_modeIdx]; _player.Mode = (PlayMode)_modeIdx; };
-        var _btnEQ = new Button("_EQ") { X = Pos.Right(_btnMode) + 1, Y = volY, Width = 6, Height = 1 };
-        _btnEQ.Clicked += () => EqWindow.Show(_player);
-        _btn8Bit = new Button("8_Bit") { X = Pos.Right(_btnEQ) + 1, Y = volY, Width = 8, Height = 1 };
-        _btn8BitDefault = _btn8Bit.ColorScheme;
-        _btn8Bit.Clicked += Toggle8Bit;
-        var btnLoopA = new Button("_A") { X = Pos.Right(_btn8Bit) + 1, Y = volY, Width = 6, Height = 1 }; btnLoopA.Clicked += () => { _player.LoopA = _player.Position; UpdateLoopLabel(); };
-        var btnLoopB = new Button("_B") { X = Pos.Right(btnLoopA) + 1, Y = volY, Width = 6, Height = 1 }; btnLoopB.Clicked += () => { _player.LoopB = _player.Position; UpdateLoopLabel(); };
-        var btnClear = new Button("_Clear") { X = Pos.Right(btnLoopB) + 1, Y = volY, Width = 9, Height = 1 }; btnClear.Clicked += () => { _player.LoopA = null; _player.LoopB = null; UpdateLoopLabel(); };
+        _btnSpeed = new Button { Text = "1.00x", X = Pos.Right(_volBar) + 2, Y = volY, Width = 8, Height = 1 };
+        _btnSpeed.Accepting += (_, _) => { _speedIdx = (_speedIdx + 1) % Speeds.Length; _btnSpeed.Text = $"{Speeds[_speedIdx]:F2}x"; _player.Speed = Speeds[_speedIdx]; _player.ApplySpeed(); };
+        _btnMode = new Button { Text = Modes[0], X = Pos.Right(_btnSpeed) + 1, Y = volY, Width = 12, Height = 1 };
+        _btnMode.Accepting += (_, _) => { _modeIdx = (_modeIdx + 1) % Modes.Length; _btnMode.Text = Modes[_modeIdx]; _player.Mode = (PlayMode)_modeIdx; };
+        var _btnEQ = new Button { Text = "_EQ", X = Pos.Right(_btnMode) + 1, Y = volY, Width = 6, Height = 1 };
+        _btnEQ.Accepting += (_, _) => EqWindow.Show(_player);
+        _btn8Bit = new Button { Text = "8_Bit", X = Pos.Right(_btnEQ) + 1, Y = volY, Width = 8, Height = 1 };
+        _btn8BitDefault = _btn8Bit.GetScheme();
+        _btn8Bit.Accepting += (_, _) => Toggle8Bit();
+        var btnLoopA = new Button { Text = "_A", X = Pos.Right(_btn8Bit) + 1, Y = volY, Width = 6, Height = 1 }; btnLoopA.Accepting += (_, _) => { _player.LoopA = _player.Position; UpdateLoopLabel(); };
+        var btnLoopB = new Button { Text = "_B", X = Pos.Right(btnLoopA) + 1, Y = volY, Width = 6, Height = 1 }; btnLoopB.Accepting += (_, _) => { _player.LoopB = _player.Position; UpdateLoopLabel(); };
+        var btnClear = new Button { Text = "_Clear", X = Pos.Right(btnLoopB) + 1, Y = volY, Width = 9, Height = 1 }; btnClear.Accepting += (_, _) => { _player.LoopA = null; _player.LoopB = null; UpdateLoopLabel(); };
 
-        _lblLoop = new Label("") { X = Pos.Right(btnClear) + 2, Y = volY, Width = Dim.Fill(), Height = 1 };
+        _lblLoop = new Label { X = Pos.Right(btnClear) + 2, Y = volY, Width = Dim.Fill(), Height = 1 };
 
-        _lblHelp = new Label(HelpText) { X = 0, Y = helpY, Width = Dim.Fill(), Height = 1, ColorScheme = cDim };
-        _lblCmdPrompt = new Label(">>>") { X = 0, Y = helpY, Width = 4, Height = 1, ColorScheme = _schemeCmdPrompt, Visible = false };
-        _lblCmdInput = new Label("") { X = 4, Y = helpY, Width = Dim.Fill(), Height = 1, ColorScheme = _schemeCmdInput, Visible = false };
+        _lblHelp = new Label { Text = HelpText, X = 0, Y = helpY, Width = Dim.Fill(), Height = 1 };
+        _lblHelp.SetScheme(cDim);
+        _lblCmdPrompt = new Label { Text = ">>>", X = 0, Y = helpY, Width = 4, Height = 1, Visible = false };
+        _lblCmdPrompt.SetScheme(_schemeCmdPrompt);
+        _lblCmdInput = new Label { X = 4, Y = helpY, Width = Dim.Fill(), Height = 1, Visible = false };
+        _lblCmdInput.SetScheme(_schemeCmdInput);
 
-        Add(_lblTitle, _lblTime, _progress, _cmbDevice, btnDevReload, _metaView);
+        Add(_lblTitle, _lblTime, _progress, _btnDevice, btnDevReload, _metaView);
         foreach (var l in _lrcLabels) Add(l);
         Add(lstLabel, _lstFiles, _spectrumView,
             btnPrev, btnNext, _btnPlayPause, btnStop, btnOpen, btnDir, btnDel, btnLoopA, btnLoopB, btnClear, btnAbort, btnSort, btnClrAll,
             lblVol, _volBar, _btnSpeed, _btnMode, _btnEQ, _btn8Bit, _lblLoop, _lblHelp, _lblCmdPrompt, _lblCmdInput);
 
         var timer = new System.Timers.Timer(100);
-        timer.Elapsed += (_, _) => Application.MainLoop.Invoke(Refresh);
+        timer.Elapsed += (_, _) => Application.Invoke(Refresh);
         timer.Start();
 
-        _player.PlaybackEnded += () => Application.MainLoop.Invoke(() => {
+        _player.PlaybackEnded += () => Application.Invoke(() => {
             _scriptWaitDone = false;
             Advance();
         });
-        Application.RootKeyEvent += OnRootKey;
+        Application.KeyDown += OnRootKey;
 
         LoadPlaylist();
         PrependArgs();
-        Closing += _ => { SavePlaylist(); SaveState(); };
 
         RegisterCommands();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        SavePlaylist();
+        SaveState();
+        base.Dispose(disposing);
     }
 
     private void RegisterCommands()
@@ -294,7 +312,7 @@ public class MainView : Window
         _cmdEngine.Register("q",     _ => Application.RequestStop(), "退出");
         _cmdEngine.Register("quit",  _ => Application.RequestStop(), "退出");
         _cmdEngine.Register("thanks", _ => {
-            MessageBox.Query(52, 10, "Thanks",
+            MessageBox.Query(Application.Instance, 52, 10, "Thanks",
                 "Whisper uses the following open source projects:\n\n" +
                 "BASS Audio Library\n" +
                 "https://www.un4seen.com/\n\n" +
@@ -340,13 +358,13 @@ public class MainView : Window
         }, "播放模式 (0=顺序 1=单曲 2=随机)");
         _cmdEngine.Register("sort", _ => SortPlaylist(), "按文件名排序播放列表");
         _cmdEngine.Register("help", _ => {
-            MessageBox.Query(55, 16, "Commands",
+            MessageBox.Query(Application.Instance, 55, 16, "Commands",
                 _cmdEngine.GetHelpText(), "OK");
         }, "列出所有命令");
         _cmdEngine.Register("exec", arg => {
             if (string.IsNullOrWhiteSpace(arg) || arg.Equals("help", StringComparison.OrdinalIgnoreCase))
             {
-                MessageBox.Query(55, 18, "exec - Script Runner",
+                MessageBox.Query(Application.Instance, 55, 18, "exec - Script Runner",
                     "Usage: exec <path.whisp>\n\n" +
                     "Execute a Whisper script (.whisp).\n" +
                     "Each line is one command (same as :cmd mode).\n\n" +
@@ -359,7 +377,7 @@ public class MainView : Window
             while (path.Contains(@"\\")) path = path.Replace(@"\\", @"\");
             if (!File.Exists(path))
             {
-                MessageBox.Query(50, 6, "exec", $"File not found:\n{path}", "OK");
+                MessageBox.Query(Application.Instance, 50, 6, "exec", $"File not found:\n{path}", "OK");
                 return;
             }
             try
@@ -374,7 +392,7 @@ public class MainView : Window
             }
             catch (Exception ex)
             {
-                MessageBox.Query(60, 8, "exec", $"Error reading script:\n{ex.Message}", "OK");
+                MessageBox.Query(Application.Instance, 60, 8, "exec", $"Error reading script:\n{ex.Message}", "OK");
             }
         }, "执行脚本 (.whisp)");
         _cmdEngine.Register("info", _ => {
@@ -390,11 +408,11 @@ public class MainView : Window
                 "────────────────────────────────\n" +
                 "by LargeHardTech\n" +
                 "github.com/LargeHardTech/Whisper";
-            MessageBox.Query(42, info.Split('\n').Length + 2, "About Whisper", info, "OK");
+            MessageBox.Query(Application.Instance, 42, info.Split('\n').Length + 2, "About Whisper", info, "OK");
         }, "关于Whisper");
         _cmdEngine.Register("wait", arg => {
             // 脚本专用命令，控制台输入报错
-            if (!_scriptRunning) { MessageBox.Query(40, 4, "wait", "wait is script-only. Use inside a .whisp file.", "OK"); return; }
+            if (!_scriptRunning) { MessageBox.Query(Application.Instance, 40, 4, "wait", "wait is script-only. Use inside a .whisp file.", "OK"); return; }
             if (string.IsNullOrWhiteSpace(arg)) return;
             var parts = arg.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0) return;
@@ -431,18 +449,20 @@ public class MainView : Window
     private void Toggle8Bit()
     {
         _player.Toggle8Bit();
-        _btn8Bit.ColorScheme = _player.Is8Bit ? new ColorScheme { Normal = Application.Driver.MakeAttribute(Color.Black, Color.BrightGreen) } : _btn8BitDefault;
+        _btn8Bit.SetScheme(_player.Is8Bit ? new Scheme { Normal = new Attribute(Color.Black, Color.BrightGreen) } : _btn8BitDefault);
     }
 
     private void SortPlaylist()
     {
-        // 自然排序：1, 2, 10 而不是 1, 10, 2
-        _playlist.Sort((a, b) => NaturalCompare(Path.GetFileName(a), Path.GetFileName(b)));
+        // 自然排序：1, 2, 10 而不是 1, 10, 2（ObservableCollection 无 Sort，重建）
+        var sorted = _playlist.OrderBy(p => p, Comparer<string>.Create((a, b) => NaturalCompare(Path.GetFileName(a), Path.GetFileName(b)))).ToList();
+        _playlist.Clear();
+        foreach (var p in sorted) _playlist.Add(p);
         _lstFiles.SetSource(_playlist);
         // 保持当前播放
         if (_currentIndex >= 0)
         {
-            _currentIndex = _playlist.IndexOf(_player.CurrentFile ?? "");
+            _currentIndex = sorted.IndexOf(_player.CurrentFile ?? "");
             _lstFiles.SelectedItem = _currentIndex >= 0 ? _currentIndex : 0;
         }
     }
@@ -477,7 +497,7 @@ public class MainView : Window
         _scriptWaitUntil = DateTime.MinValue;
         _scriptWaitDone = false;
         UpdateCmdPrompt();
-        MessageBox.Query(40, 5, "Script", "Script aborted.", "OK");
+        MessageBox.Query(Application.Instance, 40, 5, "Script", "Script aborted.", "OK");
     }
 
     private const string HelpText = "Space:Play  ,/.:Prev/Next  Up/Dn:Vol  <-/->:Seek  Del:Remove  Ctrl+O:Open  A/B:Loop  C:Clr  Q:Quit  :Cmd";
@@ -508,8 +528,8 @@ public class MainView : Window
         if (input.Length == 0) { _inCmdMode = false; UpdateCmdPrompt(); return; }
         if (!_cmdEngine.Execute(input))
         {
-            _lblCmdPrompt.ColorScheme = _schemeCmdError;
-            _lblCmdInput.ColorScheme = _schemeCmdError;
+            _lblCmdPrompt.SetScheme(_schemeCmdError);
+            _lblCmdInput.SetScheme(_schemeCmdError);
             _lblCmdInput.Text = $"Unknown command: {input}";
             _inCmdMode = false;
             _lblHelp.Visible = false;
@@ -522,53 +542,56 @@ public class MainView : Window
         UpdateCmdPrompt();
     }
 
-    private bool OnRootKey(KeyEvent ke)
+    private void OnRootKey(object? sender, Key ke)
     {
         // 消费命令错误提示后的任意按键
-        if (_cmdErrorShown) { _cmdErrorShown = false; _lblCmdPrompt.ColorScheme = _schemeCmdPrompt; _lblCmdInput.ColorScheme = _schemeCmdInput; UpdateCmdPrompt(); return true; }
+        if (_cmdErrorShown) { _cmdErrorShown = false; _lblCmdPrompt.SetScheme(_schemeCmdPrompt); _lblCmdInput.SetScheme(_schemeCmdInput); UpdateCmdPrompt(); ke.Handled = true; return; }
 
         // Escape：优先中止脚本（命令模式中不拦截）
-        if (ke.Key == Key.Esc && _scriptRunning && !_inCmdMode) { AbortScript(); return true; }
+        if (ke.KeyCode == KeyCode.Esc && _scriptRunning && !_inCmdMode) { AbortScript(); ke.Handled = true; return; }
 
         // === 命令模式 ===
         if (_inCmdMode)
         {
-            if (ke.Key == Key.Esc) { _inCmdMode = false; _cmdBuffer.Clear(); UpdateCmdPrompt(); return true; }
-            if (ke.Key == Key.Backspace) { if (_cmdBuffer.Length > 0) _cmdBuffer.Length--; UpdateCmdPrompt(); return true; }
-            if (ke.Key == Key.Enter) { ExecuteCommand(); return true; }
-            var cc = (char)ke.KeyValue;
-            if (cc >= 32 && cc < 127) { _cmdBuffer.Append(cc); UpdateCmdPrompt(); return true; }
-            return true;
+            ke.Handled = true;
+            if (ke.KeyCode == KeyCode.Esc) { _inCmdMode = false; _cmdBuffer.Clear(); UpdateCmdPrompt(); return; }
+            if (ke.KeyCode == KeyCode.Backspace) { if (_cmdBuffer.Length > 0) _cmdBuffer.Length--; UpdateCmdPrompt(); return; }
+            if (ke.KeyCode == KeyCode.Enter) { ExecuteCommand(); return; }
+            var cc = ke.TryGetPrintableRune(out var cr) ? (char)cr.Value : '\0';
+            if (cc >= 32 && cc < 127) { _cmdBuffer.Append(cc); UpdateCmdPrompt(); return; }
+            return;
         }
 
         // 对话框打开时不拦截任何按键
-        if (_dialogOpen) return false;
+        if (_dialogOpen) return;
 
-        var c = (char)ke.KeyValue;
-        if ((ke.Key & Key.CtrlMask) != 0) { _pathBuffer.Clear(); if (c == 'o' || c == 'O') { OpenFiles(); return true; } if (c == 'q' || c == 'Q') { Application.RequestStop(); return true; } return false; }
-        if (ke.Key == Key.CursorLeft) { _pathBuffer.Clear(); Seek(-5); return true; }
-        if (ke.Key == Key.CursorRight) { _pathBuffer.Clear(); Seek(5); return true; }
-        if (ke.Key == Key.CursorUp) { _pathBuffer.Clear(); if (_midiPath == null) _player.Volume = Math.Clamp(_player.Volume + 0.05f, 0, 1); return true; }
-        if (ke.Key == Key.CursorDown) { _pathBuffer.Clear(); if (_midiPath == null) _player.Volume = Math.Clamp(_player.Volume - 0.05f, 0, 1); return true; }
-        if (ke.Key == Key.DeleteChar) { _pathBuffer.Clear(); DeleteSelected(); return true; }
+        var c = ke.TryGetPrintableRune(out var pr) ? (char)pr.Value : '\0';
+        if (ke.IsCtrl) { ke.Handled = true; _pathBuffer.Clear(); if (c == 'o' || c == 'O') { OpenFiles(); } else if (c == 'q' || c == 'Q') { Application.RequestStop(); } return; }
+        if (ke.KeyCode == KeyCode.CursorLeft) { ke.Handled = true; _pathBuffer.Clear(); Seek(-5); return; }
+        if (ke.KeyCode == KeyCode.CursorRight) { ke.Handled = true; _pathBuffer.Clear(); Seek(5); return; }
+        if (ke.KeyCode == KeyCode.CursorUp) { ke.Handled = true; _pathBuffer.Clear(); if (_midiPath == null) _player.Volume = Math.Clamp(_player.Volume + 0.05f, 0, 1); return; }
+        if (ke.KeyCode == KeyCode.CursorDown) { ke.Handled = true; _pathBuffer.Clear(); if (_midiPath == null) _player.Volume = Math.Clamp(_player.Volume - 0.05f, 0, 1); return; }
+        if (ke.KeyCode == KeyCode.Delete) { ke.Handled = true; _pathBuffer.Clear(); DeleteSelected(); return; }
 
         // 回车：如果在路径收集模式，结束路径
-        if (c == '\r' || c == '\n')
+        if (ke.KeyCode == KeyCode.Enter)
         {
             if (_pathBuffer.Length > 0 && IsPathPrefix(_pathBuffer.ToString()))
             {
                 var path = _pathBuffer.ToString().Trim('"').Trim();
                 _pathBuffer.Clear();
                 ProcessDroppedFile(path);
-                return true;
+                ke.Handled = true;
+                return;
             }
             _pathBuffer.Clear();
-            return false;
+            return;
         }
 
         // 可打印字符：检测文件路径（拖拽到控制台时路径会作为文本输入）
         if (c >= 32 && c < 127)
         {
+            ke.Handled = true;
             _pathBuffer.Append(c);
             var input = _pathBuffer.ToString();
 
@@ -579,7 +602,7 @@ public class MainView : Window
                     _pathBuffer.Clear();
                     ProcessDroppedFile(input.Trim('"'));
                 }
-                return true;  // 路径收集模式：消费按键，不触发快捷键
+                return;  // 路径收集模式：消费按键，不触发快捷键
             }
 
             // 不像路径前缀，保留最后一个字符（可能是新路径的盘符开头）
@@ -589,20 +612,20 @@ public class MainView : Window
         else
         {
             _pathBuffer.Clear();
+            return;
         }
 
         switch (c) {
-            case 'q': case 'Q': Application.RequestStop(); return true;
-            case ':': if (_lastWasDriveLetter) { _lastWasDriveLetter = false; _pathBuffer.Append(':'); return true; } _inCmdMode = true; _cmdBuffer.Clear(); UpdateCmdPrompt(); return true;
-            case ' ': TogglePlayPause(); return true;
-            case ',': Prev(); return true; case '.': Next(); return true;
-            case 'c': _player.LoopA = null; _player.LoopB = null; UpdateLoopLabel(); return true;
-            case 's': SortPlaylist(); return true;
-            case '8': Toggle8Bit(); return true;
-            case 'e': case 'E': EqWindow.Show(_player); return true;
-            case 'v': case 'V': if (_isVideo) { _videoMv.Close(); _isVideo = false; } else if (_playlist.Count > 0 && IsVideoFile(_playlist[_currentIndex])) { _videoMv.Open(_playlist[_currentIndex]); _isVideo = true; } return true;
+            case 'q': case 'Q': Application.RequestStop(); return;
+            case ':': if (_lastWasDriveLetter) { _lastWasDriveLetter = false; _pathBuffer.Append(':'); return; } _inCmdMode = true; _cmdBuffer.Clear(); UpdateCmdPrompt(); return;
+            case ' ': TogglePlayPause(); return;
+            case ',': Prev(); return; case '.': Next(); return;
+            case 'c': _player.LoopA = null; _player.LoopB = null; UpdateLoopLabel(); return;
+            case 's': SortPlaylist(); return;
+            case '8': Toggle8Bit(); return;
+            case 'e': case 'E': EqWindow.Show(_player); return;
+            case 'v': case 'V': if (_isVideo) { _videoMv.Close(); _isVideo = false; } else if (_playlist.Count > 0 && IsVideoFile(_playlist[_currentIndex])) { _videoMv.Open(_playlist[_currentIndex]); _isVideo = true; } return;
         }
-        return false;
     }
 
     /// <summary>检测字符串是否像 Windows 文件路径前缀 (X: 或 "X:)</summary>
@@ -672,7 +695,7 @@ public class MainView : Window
 
     private void DeleteSelected()
     {
-        var sel = _lstFiles.SelectedItem; if (sel < 0 || sel >= _playlist.Count) return;
+        var sel = _lstFiles.SelectedItem ?? -1; if (sel < 0 || sel >= _playlist.Count) return;
         var wasCurrent = sel == _currentIndex; _playlist.RemoveAt(sel);
         if (sel < _currentIndex) _currentIndex--;
         else if (wasCurrent) { _player.Close(); _lrc = null; _lblTitle.Text = "Whisper"; _currentIndex = -1; }
@@ -688,7 +711,7 @@ public class MainView : Window
         if (!Directory.Exists(lastDir))
             lastDir = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
         if (Directory.Exists(lastDir)) Environment.CurrentDirectory = lastDir;
-        var dlg = new OpenDialog("Open Music", "Select music files") { AllowsMultipleSelection = true, AllowedFileTypes = [".mp3", ".flac", ".wav", ".ogg", ".aac", ".wma", ".m4a", ".ape", ".mid", ".midi", ".mp4", ".mkv", ".avi", ".webm"] };
+        var dlg = new OpenDialog { Title = "Open Music", AllowsMultipleSelection = true, MustExist = true };
         _dialogOpen = true;
         Application.Run(dlg); _dialogOpen = false; if (dlg.Canceled) return;
         var firstPath = dlg.FilePaths.FirstOrDefault(); if (firstPath != null) SaveLastDir(Path.GetDirectoryName(firstPath) ?? lastDir);
@@ -699,12 +722,12 @@ public class MainView : Window
 
     private void LoadFolder()
     {
-        if (_currentIndex < 0 || _currentIndex >= _playlist.Count) { MessageBox.Query(50, 5, "No song", "No song is currently playing", "OK"); return; }
+        if (_currentIndex < 0 || _currentIndex >= _playlist.Count) { MessageBox.Query(Application.Instance, 50, 5, "No song", "No song is currently playing", "OK"); return; }
         var dir = Path.GetDirectoryName(_playlist[_currentIndex]); if (dir == null || !Directory.Exists(dir)) return;
         var added = 0;
         foreach (var f in Directory.EnumerateFiles(dir, "*.*", SearchOption.TopDirectoryOnly)) if (IsMusicFile(f) && !_playlist.Contains(f)) { _playlist.Add(f); added++; }
         _lstFiles.SetSource(_playlist);
-        MessageBox.Query(50, 5, "Done", $"Loaded {added} songs from folder", "OK");
+        MessageBox.Query(Application.Instance, 50, 5, "Done", $"Loaded {added} songs from folder", "OK");
     }
 
     private void ClearAll() { _midi.Stop(); _midiPath = null; _player.Close(); _playlist.Clear(); _currentIndex = -1; _lrc = null; _lblTitle.Text = "Whisper"; _lstFiles.SetSource(_playlist); }
@@ -965,12 +988,27 @@ public class MainView : Window
             names.Add(info.Name);
             _deviceIds.Add(i);
         }
-        _cmbDevice.SetSource(names);
+        _deviceNames = names;
         if (names.Count > 0)
         {
-            _cmbDevice.SelectedItem = selected;
             _currentDevice = _deviceIds[selected];
+            _btnDevice.Text = $"Dev: {names[selected]}";
         }
+        else
+        {
+            _currentDevice = -1;
+            _btnDevice.Text = "Dev: -";
+        }
+    }
+
+    private void CycleDevice()
+    {
+        if (_deviceNames.Count == 0) return;
+        var idx = _deviceIds.IndexOf(_currentDevice);
+        idx = (idx + 1) % _deviceNames.Count;
+        _currentDevice = _deviceIds[idx];
+        _btnDevice.Text = $"Dev: {_deviceNames[idx]}";
+        _player.SwitchDevice(_currentDevice);
     }
 
     private void Refresh()
@@ -1003,7 +1041,7 @@ public class MainView : Window
             {
                 var names = string.Join("\n", nonMusic.Take(5).Select(Path.GetFileName));
                 if (nonMusic.Count > 5) names += $"\n... +{nonMusic.Count - 5} more";
-                MessageBox.Query(50, 8, "Not audio", $"Skipped non-audio file(s):\n{names}", "OK");
+                MessageBox.Query(Application.Instance, 50, 8, "Not audio", $"Skipped non-audio file(s):\n{names}", "OK");
             }
         }
 
@@ -1032,7 +1070,7 @@ public class MainView : Window
         if (_isVideo && _videoMv.IsOpen)
         {
             // 重置颜色方案，清除歌词模式下的黄色高亮
-            for (int i = 0; i < 11; i++) _lrcLabels[i].ColorScheme = _schemeAnim;
+            for (int i = 0; i < 11; i++) _lrcLabels[i].SetScheme(_schemeAnim);
             bool playing = _midiPath != null ? _midi.IsPlaying : _player.IsPlaying;
             if (playing)
             {
@@ -1044,10 +1082,10 @@ public class MainView : Window
                     _isVideo = false;
             }
         }
-        else if (_lrc != null) { for (int i = 0; i < 11; i++) _lrcLabels[i].ColorScheme = i == 5 ? _schemeCurr : _schemeDim; var idx = _lrc.GetIndex(_player.Position); for (int i = 0; i < 11; i++) { var li = idx - 5 + i; _lrcLabels[i].Text = li >= 0 && li < _lrc.Lines.Count ? _lrc.Lines[li].Text : ""; } }
+        else if (_lrc != null) { for (int i = 0; i < 11; i++) _lrcLabels[i].SetScheme(i == 5 ? _schemeCurr : _schemeDim); var idx = _lrc.GetIndex(_player.Position); for (int i = 0; i < 11; i++) { var li = idx - 5 + i; _lrcLabels[i].Text = li >= 0 && li < _lrc.Lines.Count ? _lrc.Lines[li].Text : ""; } }
         else
         {
-            for (int i = 0; i < 11; i++) _lrcLabels[i].ColorScheme = _schemeAnim;
+            for (int i = 0; i < 11; i++) _lrcLabels[i].SetScheme(_schemeAnim);
             if (_midiPath != null ? _midi.IsPlaying : _player.IsPlaying)
                 _animTime = (_midiPath != null ? _midi.Position : _player.Position).TotalSeconds;
             var fidx = _charAnim.FrameCount > 0 ? (int)(_animTime * _charAnim.Fps) % _charAnim.FrameCount : 0;

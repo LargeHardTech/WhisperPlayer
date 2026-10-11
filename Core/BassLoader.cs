@@ -41,6 +41,11 @@ public static class BassLoader
         // Brotli 压缩的 ffmpeg.exe → 启动时解压一次
         ExtractFfmpeg();
 
+        // Terminal.Gui (onigwrap) 的原生依赖 → 释放后预加载
+        var onigPath = Path.Combine(LibDir, "libonigwrap.dll");
+        if (ExtractDll("libonigwrap.dll", onigPath) || File.Exists(onigPath))
+            NativeLibrary.Load(onigPath);
+
         if (!ManagedBass.Bass.Init(-1, 44100, ManagedBass.DeviceInitFlags.Default))
         {
             var err = ManagedBass.Bass.LastError;
