@@ -163,10 +163,10 @@ public class MainView : Window
             X = 0, Y = 0, Width = Dim.Fill(26), Height = 1
         };
         _lblTitle.SetScheme(cNormal);
-        var btnDevReload = new Button {
+        var btnDevReload = new Button { NoPadding = true,
             Text = "Refresh", X = Pos.AnchorEnd(30), Y = 0, Width = 8, Height = 1
         };
-        _btnDevice = new Button {
+        _btnDevice = new Button { NoPadding = true,
             Text = "Dev: -", X = Pos.Right(btnDevReload) + 1, Y = 0, Width = 28, Height = 1
         };
         _btnDevice.Accepting += (_, _) => CycleDevice();
@@ -233,37 +233,37 @@ public class MainView : Window
         var volY = Pos.AnchorEnd(2);
         var helpY = Pos.AnchorEnd(1);
 
-        var btnPrev = new Button { Text = "_<", X = 0, Y = btnY, Width = 7, Height = 1 }; btnPrev.Accepting += (_, _) => Prev();
-        var btnNext = new Button { Text = "_>", X = Pos.Right(btnPrev) + 1, Y = btnY, Width = 7, Height = 1 }; btnNext.Accepting += (_, _) => Next();
+        var btnPrev = new Button { NoPadding = true, Text = "_<", X = 0, Y = btnY, Width = 7, Height = 1 }; btnPrev.Accepting += (_, _) => Prev();
+        var btnNext = new Button { NoPadding = true, Text = "_>", X = Pos.Right(btnPrev) + 1, Y = btnY, Width = 7, Height = 1 }; btnNext.Accepting += (_, _) => Next();
 
-        _btnPlayPause = new Button { Text = "_Play", X = Pos.Right(btnNext) + 1, Y = btnY, Width = 10, Height = 1 }; _btnPlayPause.Accepting += (_, _) => TogglePlayPause();
-        var btnStop = new Button { Text = "_Stop", X = Pos.Right(_btnPlayPause) + 1, Y = btnY, Width = 9, Height = 1 }; btnStop.Accepting += (_, _) => { if (_midiPath != null) _midi.Stop(); else _player.Stop(); if (_isVideo) { _videoMv.Close(); for (int i = 0; i < 11; i++) _lrcLabels[i].Text = ""; } };
-        var btnOpen = new Button { Text = "_Open", X = Pos.Right(btnStop) + 1, Y = btnY, Width = 9, Height = 1 }; btnOpen.Accepting += (_, _) => OpenFiles();
-        var btnDir = new Button { Text = "_Load", X = Pos.Right(btnOpen) + 1, Y = btnY, Width = 9, Height = 1 }; btnDir.Accepting += (_, _) => LoadFolder();
-        var btnDel = new Button { Text = "_Del", X = Pos.Right(btnDir) + 1, Y = btnY, Width = 8, Height = 1 }; btnDel.Accepting += (_, _) => DeleteSelected();
-        var btnAbort = new Button { Text = "Abo_rt", X = Pos.Right(btnDel) + 1, Y = btnY, Width = 9, Height = 1 };
+        _btnPlayPause = new Button { NoPadding = true, Text = "_Play", X = Pos.Right(btnNext) + 1, Y = btnY, Width = 10, Height = 1 }; _btnPlayPause.Accepting += (_, _) => TogglePlayPause();
+        var btnStop = new Button { NoPadding = true, Text = "_Stop", X = Pos.Right(_btnPlayPause) + 1, Y = btnY, Width = 9, Height = 1 }; btnStop.Accepting += (_, _) => { if (_midiPath != null) _midi.Stop(); else _player.Stop(); if (_isVideo) { _videoMv.Close(); for (int i = 0; i < 11; i++) _lrcLabels[i].Text = ""; } };
+        var btnOpen = new Button { NoPadding = true, Text = "_Open", X = Pos.Right(btnStop) + 1, Y = btnY, Width = 9, Height = 1 }; btnOpen.Accepting += (_, _) => OpenFiles();
+        var btnDir = new Button { NoPadding = true, Text = "_Load", X = Pos.Right(btnOpen) + 1, Y = btnY, Width = 9, Height = 1 }; btnDir.Accepting += (_, _) => LoadFolder();
+        var btnDel = new Button { NoPadding = true, Text = "_Del", X = Pos.Right(btnDir) + 1, Y = btnY, Width = 8, Height = 1 }; btnDel.Accepting += (_, _) => DeleteSelected();
+        var btnAbort = new Button { NoPadding = true, Text = "Abo_rt", X = Pos.Right(btnDel) + 1, Y = btnY, Width = 9, Height = 1 };
         btnAbort.Accepting += (_, _) => AbortScript();
-        var btnSort = new Button { Text = "_Sort", X = Pos.Right(btnAbort) + 1, Y = btnY, Width = 9, Height = 1 };
+        var btnSort = new Button { NoPadding = true, Text = "_Sort", X = Pos.Right(btnAbort) + 1, Y = btnY, Width = 9, Height = 1 };
         btnSort.Accepting += (_, _) => SortPlaylist();
-        var btnClrAll = new Button { Text = "Cl_rAll", X = Pos.Right(btnSort) + 1, Y = btnY, Width = 9, Height = 1 }; btnClrAll.Accepting += (_, _) => ClearAll();
+        var btnClrAll = new Button { NoPadding = true, Text = "Cl_rAll", X = Pos.Right(btnSort) + 1, Y = btnY, Width = 9, Height = 1 }; btnClrAll.Accepting += (_, _) => ClearAll();
 
         // Volume row
         var lblVol = new Label { Text = "Vol:", X = 0, Y = volY, Width = 5, Height = 1 };
         _volBar = new ProgressBar { X = Pos.Right(lblVol) + 1, Y = volY, Width = 20, Height = 1, Fraction = 0.8f };
         _player.Volume = 0.8f;
 
-        _btnSpeed = new Button { Text = "1.00x", X = Pos.Right(_volBar) + 2, Y = volY, Width = 8, Height = 1 };
+        _btnSpeed = new Button { NoPadding = true, Text = "1.00x", X = Pos.Right(_volBar) + 2, Y = volY, Width = 8, Height = 1 };
         _btnSpeed.Accepting += (_, _) => { _speedIdx = (_speedIdx + 1) % Speeds.Length; _btnSpeed.Text = $"{Speeds[_speedIdx]:F2}x"; _player.Speed = Speeds[_speedIdx]; _player.ApplySpeed(); };
-        _btnMode = new Button { Text = Modes[0], X = Pos.Right(_btnSpeed) + 1, Y = volY, Width = 12, Height = 1 };
+        _btnMode = new Button { NoPadding = true, Text = Modes[0], X = Pos.Right(_btnSpeed) + 1, Y = volY, Width = 12, Height = 1 };
         _btnMode.Accepting += (_, _) => { _modeIdx = (_modeIdx + 1) % Modes.Length; _btnMode.Text = Modes[_modeIdx]; _player.Mode = (PlayMode)_modeIdx; };
-        var _btnEQ = new Button { Text = "_EQ", X = Pos.Right(_btnMode) + 1, Y = volY, Width = 6, Height = 1 };
+        var _btnEQ = new Button { NoPadding = true, Text = "_EQ", X = Pos.Right(_btnMode) + 1, Y = volY, Width = 6, Height = 1 };
         _btnEQ.Accepting += (_, _) => EqWindow.Show(_player);
-        _btn8Bit = new Button { Text = "8_Bit", X = Pos.Right(_btnEQ) + 1, Y = volY, Width = 8, Height = 1 };
+        _btn8Bit = new Button { NoPadding = true, Text = "8_Bit", X = Pos.Right(_btnEQ) + 1, Y = volY, Width = 8, Height = 1 };
         _btn8BitDefault = _btn8Bit.GetScheme();
         _btn8Bit.Accepting += (_, _) => Toggle8Bit();
-        var btnLoopA = new Button { Text = "_A", X = Pos.Right(_btn8Bit) + 1, Y = volY, Width = 6, Height = 1 }; btnLoopA.Accepting += (_, _) => { _player.LoopA = _player.Position; UpdateLoopLabel(); };
-        var btnLoopB = new Button { Text = "_B", X = Pos.Right(btnLoopA) + 1, Y = volY, Width = 6, Height = 1 }; btnLoopB.Accepting += (_, _) => { _player.LoopB = _player.Position; UpdateLoopLabel(); };
-        var btnClear = new Button { Text = "_Clear", X = Pos.Right(btnLoopB) + 1, Y = volY, Width = 9, Height = 1 }; btnClear.Accepting += (_, _) => { _player.LoopA = null; _player.LoopB = null; UpdateLoopLabel(); };
+        var btnLoopA = new Button { NoPadding = true, Text = "_A", X = Pos.Right(_btn8Bit) + 1, Y = volY, Width = 6, Height = 1 }; btnLoopA.Accepting += (_, _) => { _player.LoopA = _player.Position; UpdateLoopLabel(); };
+        var btnLoopB = new Button { NoPadding = true, Text = "_B", X = Pos.Right(btnLoopA) + 1, Y = volY, Width = 6, Height = 1 }; btnLoopB.Accepting += (_, _) => { _player.LoopB = _player.Position; UpdateLoopLabel(); };
+        var btnClear = new Button { NoPadding = true, Text = "_Clear", X = Pos.Right(btnLoopB) + 1, Y = volY, Width = 9, Height = 1 }; btnClear.Accepting += (_, _) => { _player.LoopA = null; _player.LoopB = null; UpdateLoopLabel(); };
 
         _lblLoop = new Label { X = Pos.Right(btnClear) + 2, Y = volY, Width = Dim.Fill(), Height = 1 };
 
@@ -296,10 +296,16 @@ public class MainView : Window
         RegisterCommands();
     }
 
-    protected override void Dispose(bool disposing)
+    /// <summary>退出前保存配置（v2 Run 返回后由 Program 显式调用，Dispose 不保证触发）</summary>
+    public void SaveAll()
     {
         SavePlaylist();
         SaveState();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        SaveAll();
         base.Dispose(disposing);
     }
 

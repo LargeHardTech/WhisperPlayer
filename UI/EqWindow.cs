@@ -83,11 +83,11 @@ public class EqWindow : Window
         RefreshGains();  // 修复重新进入时颜色不正确的 bug
 
         // OK + Reset
-        var btnOk = new Button { Text = "OK", X = 20, Y = 7 };
+        var btnOk = new Button { NoPadding = true, Text = "OK", X = 20, Y = 7 };
         btnOk.Accepting += (_, _) => Application.RequestStop(this);
         Add(btnOk);
 
-        var btnReset = new Button { Text = "Reset", X = 32, Y = 7 };
+        var btnReset = new Button { NoPadding = true, Text = "Reset", X = 32, Y = 7 };
         btnReset.Accepting += (_, _) => {
             for (int i = 0; i < 10; i++) _player.SetEqBand(i, 0);
             _presetIdx = 0;

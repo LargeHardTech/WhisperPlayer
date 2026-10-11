@@ -67,7 +67,11 @@ internal static class Program
             var enHkl = LoadKeyboardLayout("00000409", 1); // US English
             ActivateKeyboardLayout(enHkl, 0);
 
-            Application.Run(new MainView(), null);
+            var main = new MainView();
+            Application.Run(main, null);
+            // v2 Run 返回后不会自动 Dispose 窗口，显式保存配置再释放
+            main.SaveAll();
+            main.Dispose();
 
             // 恢复
             ActivateKeyboardLayout(hkl, 0);
