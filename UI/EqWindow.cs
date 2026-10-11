@@ -41,14 +41,14 @@ public class EqWindow : Window
         var lblPr = new Label { Text = "Preset:", X = 10, Y = 0 };
         Add(lblPr);
 
-        _btnPrev = new Button { Text = "<", X = 18, Y = 0, Width = 3 };
+        _btnPrev = new Button { Text = "<", X = 18, Y = 0, Width = 3, Height = 1, NoPadding = true };
         _btnPrev.Accepting += (_, _) => CyclePreset(-1);
         Add(_btnPrev);
 
         _lblPresetName = new Label { Text = "", X = 23, Y = 0, Width = 14 };
         Add(_lblPresetName);
 
-        _btnNext = new Button { Text = ">", X = 38, Y = 0, Width = 3 };
+        _btnNext = new Button { Text = ">", X = 38, Y = 0, Width = 3, Height = 1, NoPadding = true };
         _btnNext.Accepting += (_, _) => CyclePreset(1);
         Add(_btnNext);
 
@@ -69,12 +69,12 @@ public class EqWindow : Window
             Add(lbl);
 
             var band = i;
-            var up = new Button { Text = "+", X = x, Y = 4, Width = 3 };
+            var up = new Button { Text = "+", X = x, Y = 4, Width = 3, Height = 1, NoPadding = true };
             up.Accepting += (_, _) => { player.SetEqBand(band, player.EqGains[band] + 1); RefreshGains(); _presetIdx = -1; _lblPresetName.Text = "Custom"; };
             _btns[i, 0] = up;
             Add(up);
 
-            var dn = new Button { Text = "-", X = x, Y = 5, Width = 3 };
+            var dn = new Button { Text = "-", X = x, Y = 5, Width = 3, Height = 1, NoPadding = true };
             dn.Accepting += (_, _) => { player.SetEqBand(band, player.EqGains[band] - 1); RefreshGains(); _presetIdx = -1; _lblPresetName.Text = "Custom"; };
             _btns[i, 1] = dn;
             Add(dn);
