@@ -105,11 +105,11 @@ public class MainView : Window
             Disabled = new Attribute(UiColors.Grey, Color.Black)
         };
         _schemeAnim = new Scheme {
-            Normal = new Attribute(UiColors.Grey, Color.Black),
-            Focus = new Attribute(UiColors.Grey, Color.Black),
-            HotNormal = new Attribute(UiColors.Grey, Color.Black),
-            HotFocus = new Attribute(UiColors.Grey, Color.Black),
-            Disabled = new Attribute(UiColors.Grey, Color.Black)
+            Normal = new Attribute(UiColors.Dim, Color.Black),
+            Focus = new Attribute(UiColors.Dim, Color.Black),
+            HotNormal = new Attribute(UiColors.Dim, Color.Black),
+            HotFocus = new Attribute(UiColors.Dim, Color.Black),
+            Disabled = new Attribute(UiColors.Dim, Color.Black)
         };
         _schemeCmdPrompt = new Scheme {
             Normal = new Attribute(UiColors.Grey, Color.Black),
