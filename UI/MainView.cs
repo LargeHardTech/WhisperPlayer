@@ -10,6 +10,13 @@ using Whisper.Core;
 
 namespace Whisper.UI;
 
+/// <summary>统一 UI 调色板（跟随 Windows Terminal 默认配色）</summary>
+internal static class UiColors
+{
+    public static readonly Color Green = new("#13A10E");
+    public static readonly Color Grey = new("#CCCCCC");
+}
+
 public class MainView : Window
 {
     private readonly Player _player = Program.Player;
@@ -90,25 +97,25 @@ public class MainView : Window
 
         _charAnim = CharAnim.LoadOrCreate();
         var cNormal = new Scheme {
-            Normal = new Attribute(Color.BrightGreen, Color.Black),
+            Normal = new Attribute(UiColors.Green, Color.Black),
             Focus = new Attribute(Color.Black, Color.DarkGray),
             HotNormal = new Attribute(Color.BrightBlue, Color.Black),
             HotFocus = new Attribute(Color.BrightCyan, Color.DarkGray),
-            Disabled = new Attribute(Color.Gray, Color.Black)
+            Disabled = new Attribute(UiColors.Grey, Color.Black)
         };
         _schemeAnim = new Scheme {
-            Normal = new Attribute(Color.Gray, Color.Black),
-            Focus = new Attribute(Color.Gray, Color.Black),
-            HotNormal = new Attribute(Color.Gray, Color.Black),
-            HotFocus = new Attribute(Color.Gray, Color.Black),
-            Disabled = new Attribute(Color.Gray, Color.Black)
+            Normal = new Attribute(UiColors.Grey, Color.Black),
+            Focus = new Attribute(UiColors.Grey, Color.Black),
+            HotNormal = new Attribute(UiColors.Grey, Color.Black),
+            HotFocus = new Attribute(UiColors.Grey, Color.Black),
+            Disabled = new Attribute(UiColors.Grey, Color.Black)
         };
         _schemeCmdPrompt = new Scheme {
-            Normal = new Attribute(Color.Gray, Color.Black),
-            Focus = new Attribute(Color.Gray, Color.Black),
-            HotNormal = new Attribute(Color.Gray, Color.Black),
-            HotFocus = new Attribute(Color.Gray, Color.Black),
-            Disabled = new Attribute(Color.Gray, Color.Black)
+            Normal = new Attribute(UiColors.Grey, Color.Black),
+            Focus = new Attribute(UiColors.Grey, Color.Black),
+            HotNormal = new Attribute(UiColors.Grey, Color.Black),
+            HotFocus = new Attribute(UiColors.Grey, Color.Black),
+            Disabled = new Attribute(UiColors.Grey, Color.Black)
         };
         _schemeCmdInput = new Scheme {
             Normal = new Attribute(Color.BrightYellow, Color.Black),
@@ -125,20 +132,20 @@ public class MainView : Window
             Disabled = new Attribute(Color.Red, Color.Black)
         };
         var cWindow = new Scheme {
-            Normal = new Attribute(Color.BrightGreen, Color.Black),
-            Focus = new Attribute(Color.BrightGreen, Color.Black),
+            Normal = new Attribute(UiColors.Green, Color.Black),
+            Focus = new Attribute(UiColors.Green, Color.Black),
             HotNormal = new Attribute(Color.BrightBlue, Color.Black),
             HotFocus = new Attribute(Color.BrightCyan, Color.DarkGray),
-            Disabled = new Attribute(Color.Gray, Color.Black)
+            Disabled = new Attribute(UiColors.Grey, Color.Black)
         };
         SetScheme(cWindow);
 
         var cDim = new Scheme {
-            Normal = new Attribute(Color.Gray, Color.Black),
-            Focus = new Attribute(Color.Gray, Color.Black),
-            HotNormal = new Attribute(Color.Gray, Color.Black),
-            HotFocus = new Attribute(Color.Gray, Color.Black),
-            Disabled = new Attribute(Color.Gray, Color.Black)
+            Normal = new Attribute(UiColors.Grey, Color.Black),
+            Focus = new Attribute(UiColors.Grey, Color.Black),
+            HotNormal = new Attribute(UiColors.Grey, Color.Black),
+            HotFocus = new Attribute(UiColors.Grey, Color.Black),
+            Disabled = new Attribute(UiColors.Grey, Color.Black)
         };
         _schemeDim = cDim;
         var cCurr = new Scheme {
@@ -150,11 +157,11 @@ public class MainView : Window
         };
         _schemeCurr = cCurr;
         var cList = new Scheme {
-            Normal = new Attribute(Color.BrightGreen, Color.Black),
+            Normal = new Attribute(UiColors.Green, Color.Black),
             Focus = new Attribute(Color.Black, Color.DarkGray),
             HotNormal = new Attribute(Color.BrightBlue, Color.Black),
             HotFocus = new Attribute(Color.Black, Color.DarkGray),
-            Disabled = new Attribute(Color.Gray, Color.Black)
+            Disabled = new Attribute(UiColors.Grey, Color.Black)
         };
 
         // === Top info ===
@@ -181,7 +188,7 @@ public class MainView : Window
             _player.SwitchDevice(_currentDevice);
         };
         _lblTime = new Label { Text = "00:00 / 00:00", X = 0, Y = 1, Width = 16, Height = 1 };
-        var progBar = new Scheme { Normal = new Attribute(Color.BrightGreen, Color.DarkGray), HotNormal = new Attribute(Color.BrightGreen, Color.DarkGray) };
+        var progBar = new Scheme { Normal = new Attribute(UiColors.Green, Color.DarkGray), HotNormal = new Attribute(UiColors.Green, Color.DarkGray) };
         _progress = new ProgressBar { X = 18, Y = 1, Width = Dim.Fill(), Height = 1, Fraction = 0 };
         _progress.SetScheme(progBar);
 
@@ -215,7 +222,7 @@ public class MainView : Window
         _spectrumView.SetScheme(cWindow);
         var specLbls = new[] { "Ovl", "Sub", "L1 ", "L2 ", "L3 ", "L4 ", "M1 ", "M2 ", "M3 ", "M4 ", "H1 ", "H2 ", "H3 ", "H4 ", "Hi1", "Hi2", "Hi3" };
         var specCyan = new Scheme { Normal = new Attribute(Color.BrightCyan, Color.Black) };
-        var specBar = new Scheme { Normal = new Attribute(Color.BrightGreen, Color.Black) };
+        var specBar = new Scheme { Normal = new Attribute(UiColors.Green, Color.Black) };
         for (int i = 0; i < 17; i++)
         {
             // 频段标签
@@ -463,7 +470,7 @@ public class MainView : Window
     private void Toggle8Bit()
     {
         _player.Toggle8Bit();
-        _btn8Bit.SetScheme(_player.Is8Bit ? new Scheme { Normal = new Attribute(Color.Black, Color.BrightGreen) } : _btn8BitDefault);
+        _btn8Bit.SetScheme(_player.Is8Bit ? new Scheme { Normal = new Attribute(Color.Black, UiColors.Green) } : _btn8BitDefault);
     }
 
     private void SortPlaylist()

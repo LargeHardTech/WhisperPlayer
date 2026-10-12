@@ -130,9 +130,9 @@ public class EqWindow : Window
             _lblGains[i].Text = GainText(_player.EqGains[i]);
             var c = _player.EqGains[i] switch
             {
-                > 0 => new Attribute(Color.BrightGreen, Color.Black),
+                > 0 => new Attribute(UiColors.Green, Color.Black),
                 < 0 => new Attribute(Color.BrightRed, Color.Black),
-                _ => new Attribute(Color.Gray, Color.Black)
+                _ => new Attribute(UiColors.Grey, Color.Black)
             };
             _lblGains[i].SetScheme(new Scheme { Normal = c });
         }
