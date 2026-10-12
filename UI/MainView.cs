@@ -158,7 +158,7 @@ public class MainView : Window
         };
         _schemeCurr = cCurr;
         var cList = new Scheme {
-            Normal = new Attribute(UiColors.Dim, Color.Black),
+            Normal = new Attribute(UiColors.Green, Color.Black),
             Focus = new Attribute(Color.Black, Color.DarkGray),
             HotNormal = new Attribute(Color.BrightBlue, Color.Black),
             HotFocus = new Attribute(Color.Black, Color.DarkGray),
