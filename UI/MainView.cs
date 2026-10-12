@@ -15,6 +15,7 @@ internal static class UiColors
 {
     public static readonly Color Green = new("#13A10E");
     public static readonly Color Grey = new("#CCCCCC");
+    public static readonly Color Dim = new("#767676");
 }
 
 public class MainView : Window
@@ -141,11 +142,11 @@ public class MainView : Window
         SetScheme(cWindow);
 
         var cDim = new Scheme {
-            Normal = new Attribute(UiColors.Grey, Color.Black),
-            Focus = new Attribute(UiColors.Grey, Color.Black),
-            HotNormal = new Attribute(UiColors.Grey, Color.Black),
-            HotFocus = new Attribute(UiColors.Grey, Color.Black),
-            Disabled = new Attribute(UiColors.Grey, Color.Black)
+            Normal = new Attribute(UiColors.Dim, Color.Black),
+            Focus = new Attribute(UiColors.Dim, Color.Black),
+            HotNormal = new Attribute(UiColors.Dim, Color.Black),
+            HotFocus = new Attribute(UiColors.Dim, Color.Black),
+            Disabled = new Attribute(UiColors.Dim, Color.Black)
         };
         _schemeDim = cDim;
         var cCurr = new Scheme {
@@ -157,11 +158,11 @@ public class MainView : Window
         };
         _schemeCurr = cCurr;
         var cList = new Scheme {
-            Normal = new Attribute(UiColors.Green, Color.Black),
+            Normal = new Attribute(UiColors.Dim, Color.Black),
             Focus = new Attribute(Color.Black, Color.DarkGray),
             HotNormal = new Attribute(Color.BrightBlue, Color.Black),
             HotFocus = new Attribute(Color.Black, Color.DarkGray),
-            Disabled = new Attribute(UiColors.Grey, Color.Black)
+            Disabled = new Attribute(UiColors.Dim, Color.Black)
         };
 
         // === Top info ===
@@ -171,6 +172,14 @@ public class MainView : Window
         };
         _lblTitle.SetScheme(cNormal);
         _ddlDevice = new DropDownList { X = Pos.AnchorEnd(34), Y = 0, Width = 34, Height = 1 };
+        var ddlScheme = new Scheme {
+            Normal = new Attribute(UiColors.Dim, Color.Black),
+            Focus = new Attribute(UiColors.Dim, Color.Black),
+            HotNormal = new Attribute(UiColors.Dim, Color.Black),
+            HotFocus = new Attribute(UiColors.Dim, Color.Black),
+            Disabled = new Attribute(UiColors.Dim, Color.Black)
+        };
+        _ddlDevice.SetScheme(ddlScheme);
         var btnDevReload = new Button { NoPadding = true,
             Text = "刷新", X = Pos.Left(_ddlDevice) - 7, Y = 0, Width = 6, Height = 1
         };
@@ -188,7 +197,7 @@ public class MainView : Window
             _player.SwitchDevice(_currentDevice);
         };
         _lblTime = new Label { Text = "00:00 / 00:00", X = 0, Y = 1, Width = 16, Height = 1 };
-        var progBar = new Scheme { Normal = new Attribute(UiColors.Green, Color.DarkGray), HotNormal = new Attribute(UiColors.Green, Color.DarkGray) };
+        var progBar = new Scheme { Normal = new Attribute(UiColors.Green, UiColors.Dim), HotNormal = new Attribute(UiColors.Green, UiColors.Dim) };
         _progress = new ProgressBar { X = 18, Y = 1, Width = Dim.Fill(), Height = 1, Fraction = 0 };
         _progress.SetScheme(progBar);
 
